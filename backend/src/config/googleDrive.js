@@ -34,6 +34,21 @@ const loadCredentials = () => {
         return true;
     }
 
+    // Try reading from Environment Variable FIRST (for Railway)
+    if (process.env.GOOGLE_DRIVE_TOKENS) {
+        try {
+            const tokens = JSON.parse(process.env.GOOGLE_DRIVE_TOKENS);
+            cachedCredentials = tokens;
+            oauth2Client.setCredentials(tokens);
+            // Optional: Save it locally just in case
+            fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
+            return true;
+        } catch (err) {
+            console.error('Error parsing GOOGLE_DRIVE_TOKENS from env:', err);
+        }
+    }
+
+    // Fallback to reading from tokens.json file (for Local dev)
     if (fs.existsSync(TOKEN_PATH)) {
         try {
             const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH));
