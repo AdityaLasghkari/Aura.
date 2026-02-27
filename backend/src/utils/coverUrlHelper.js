@@ -16,7 +16,7 @@
  * the proxy can still fetch the file from Drive.
  */
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+const getBackendUrl = () => process.env.BACKEND_URL || 'http://localhost:5000';
 
 /**
  * Extract Google Drive File ID from any of the known URL formats:
@@ -57,7 +57,7 @@ export function normalizeCoverUrl(url) {
     const driveId = extractDriveId(url);
     if (!driveId) return url; // unknown format, keep as-is
 
-    return `${BACKEND_URL}/api/songs/image/${driveId}`;
+    return `${getBackendUrl()}/api/songs/image/${driveId}`;
 }
 
 /**
@@ -67,7 +67,18 @@ export function normalizeCoverUrl(url) {
 export function normalizeSong(song) {
     if (!song) return song;
     const s = song.toObject ? song.toObject() : { ...song };
+
+    // Normalize Cover URL
     s.coverUrl = normalizeCoverUrl(s.coverUrl);
+
+    // Normalize Audio URL dynamically 
+    if (s.audioUrl) {
+        const driveId = extractDriveId(s.audioUrl);
+        if (driveId) {
+            s.audioUrl = `${getBackendUrl()}/api/songs/stream/${driveId}`;
+        }
+    }
+
     return s;
 }
 
