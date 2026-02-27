@@ -158,6 +158,30 @@ app.get('/api/test-env', (req, res) => {
     res.json(safeEnv);
 });
 
+app.get('/api/test-google-api', async (req, res) => {
+    try {
+        const { google } = await import('googleapis');
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/oauth2callback'
+        );
+        const tokens = JSON.parse(process.env.GOOGLE_DRIVE_TOKENS);
+        oauth2Client.setCredentials(tokens);
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        const response = await drive.files.list({ pageSize: 1, fields: 'files(id, name)' });
+        res.json({ success: true, files: response.data.files });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            response: error.response ? error.response.data : null,
+            stack: error.stack
+        });
+    }
+});
+
 // Test route
 app.get('/', (req, res) => {
     res.send('Aura Music API is running...');
