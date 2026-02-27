@@ -134,6 +134,21 @@ app.get('/oauth2callback', async (req, res) => {
     }
 });
 
+// Debug route for environment variables
+app.get('/api/test-env', (req, res) => {
+    const safeEnv = {
+        hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+        clientIdLength: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.length : 0,
+        clientIdEndsWithSpace: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.endsWith(' ') : false,
+        hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+        clientSecretLength: process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.length : 0,
+        clientSecretEndsWithSpace: process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.endsWith(' ') : false,
+        hasDriveTokens: !!process.env.GOOGLE_DRIVE_TOKENS,
+        driveTokensLength: process.env.GOOGLE_DRIVE_TOKENS ? process.env.GOOGLE_DRIVE_TOKENS.length : 0,
+    };
+    res.json(safeEnv);
+});
+
 // Test route
 app.get('/', (req, res) => {
     res.send('Aura Music API is running...');
