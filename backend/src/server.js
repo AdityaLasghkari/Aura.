@@ -139,15 +139,21 @@ app.get('/api/test-env', (req, res) => {
     const id = process.env.GOOGLE_CLIENT_ID || '';
     const secret = process.env.GOOGLE_CLIENT_SECRET || '';
 
+    let parsedTokens = null;
+    try {
+        if (process.env.GOOGLE_DRIVE_TOKENS) {
+            parsedTokens = JSON.parse(process.env.GOOGLE_DRIVE_TOKENS);
+        }
+    } catch (e) {
+        parsedTokens = 'PARSE_ERROR';
+    }
+
     const safeEnv = {
-        hasClientId: !!process.env.GOOGLE_CLIENT_ID,
-        clientIdLength: id.length,
-        clientIdChars: Array.from(id).map(c => c.charCodeAt(0)),
-        hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-        clientSecretLength: secret.length,
-        clientSecretChars: Array.from(secret).map(c => c.charCodeAt(0)),
-        hasDriveTokens: !!process.env.GOOGLE_DRIVE_TOKENS,
-        driveTokensLength: process.env.GOOGLE_DRIVE_TOKENS ? process.env.GOOGLE_DRIVE_TOKENS.length : 0,
+        idMatch: id.startsWith('432111') && id.endsWith('.com'),
+        secretMatch: secret.startsWith('GOC') && secret.endsWith('LGL') && secret.length === 35,
+        tokensParsed: parsedTokens !== null && parsedTokens !== 'PARSE_ERROR',
+        hasRefreshToken: parsedTokens && !!parsedTokens.refresh_token,
+        refreshPrefix: parsedTokens && parsedTokens.refresh_token ? parsedTokens.refresh_token.substring(0, 10) : null
     };
     res.json(safeEnv);
 });
