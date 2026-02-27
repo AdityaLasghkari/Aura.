@@ -1,0 +1,165 @@
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import connectDB from './config/database.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
+
+// Routes
+import authRoutes from './routes/authRoutes.js';
+import songRoutes from './routes/songRoutes.js';
+import playlistRoutes from './routes/playlistRoutes.js';
+import historyRoutes from './routes/historyRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import artistRoutes from './routes/artistRoutes.js';
+import socketHandler from './utils/socketHandler.js';
+
+dotenv.config();
+
+// Connect to database
+connectDB();
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+}
+
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            // Allow images from our stream proxy, placehold.co fallbacks, and any https source
+            "img-src": [
+                "'self'",
+                "data:",
+                "blob:",
+                "http://localhost:5000",
+                "http://localhost:5001",
+                "https://placehold.co",
+                "https://images.unsplash.com",
+                "https://drive.google.com",
+                "https://www.transparenttextures.com",
+                "https:",
+            ],
+            "connect-src": [
+                "'self'",
+                "http://localhost:5000",
+                "ws://localhost:5000",
+                "http://127.0.0.1:5000",
+                "ws://127.0.0.1:5000",
+                "http://localhost:5001",
+                "http://localhost:5173",
+            ],
+            "media-src": [
+                "'self'",
+                "blob:",
+                "http://localhost:5000",
+            ],
+        }
+    }
+}));
+app.use(cors({
+    // Allow all localhost origins used in development
+    origin: (origin, callback) => {
+        const allowed = [
+            process.env.FRONTEND_URL || 'http://localhost:5173',
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:3000',
+        ];
+        if (!origin || allowed.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    },
+    credentials: true
+}));
+app.use(compression());
+
+// Routes mapping
+app.use('/api/auth', authRoutes);
+app.use('/api/songs', songRoutes);
+app.use('/api/playlists', playlistRoutes);
+app.use('/api/history', historyRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/artists', artistRoutes);
+
+// Google Drive Auth Routes
+app.get('/auth/google', async (req, res) => {
+    const { google } = await import('googleapis');
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/oauth2callback'
+    );
+    const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        prompt: 'consent',
+        scope: ['https://www.googleapis.com/auth/drive.file']
+    });
+    res.redirect(url);
+});
+
+app.get('/oauth2callback', async (req, res) => {
+    try {
+        const { google } = await import('googleapis');
+        const fs = await import('fs');
+        const path = await import('path');
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/oauth2callback'
+        );
+        const { tokens } = await oauth2Client.getToken(req.query.code);
+        fs.writeFileSync(path.join(process.cwd(), 'tokens.json'), JSON.stringify(tokens, null, 2));
+
+        // Let's also update the in-memory drive instance
+        const { loadCredentials } = await import('./config/googleDrive.js');
+        loadCredentials();
+
+        res.send('✅ Google Drive tokens updated! You can close this window and refresh the site. Songs should play now.');
+    } catch (err) {
+        res.status(500).send('Error saving tokens: ' + err.message);
+    }
+});
+
+// Test route
+app.get('/', (req, res) => {
+    res.send('Aura Music API is running...');
+});
+
+// Error handling
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: [
+            process.env.FRONTEND_URL || 'http://localhost:5173',
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:3000',
+        ],
+        credentials: true
+    }
+});
+
+socketHandler(io);
+
+httpServer.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
