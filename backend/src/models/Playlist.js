@@ -67,9 +67,8 @@ const playlistSchema = new mongoose.Schema({
 
 // Indexes
 playlistSchema.index({ userId: 1 });
-playlistSchema.index({ name: 1 }, { unique: true });
 playlistSchema.index({ isPublic: 1 });
-playlistSchema.index({ shareCode: 1 });
+
 
 // Virtual for song count
 playlistSchema.virtual('songCount').get(function () {
