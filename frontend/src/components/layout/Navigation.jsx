@@ -68,17 +68,15 @@ const Navigation = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center space-x-8">
-                        {/* Desktop Actions */}
-                        <div className="hidden md:flex items-center space-x-8 
-                          text-[11px] uppercase tracking-[0.2em] 
-                          font-medium">
+                    <div className="flex items-center space-x-4 md:space-x-8">
+                        {/* Always Visible Actions: Search & Sync */}
+                        <div className="flex items-center space-x-4 md:space-x-8 text-[11px] uppercase tracking-[0.2em] font-medium">
                             <button
                                 onClick={() => setSearchOpen(true)}
                                 className="hover:text-foreground text-gray-400 transition-colors flex items-center space-x-2"
                             >
-                                <Search size={14} />
-                                <span>SEARCH</span>
+                                <Search className="w-5 h-5 md:w-3.5 md:h-3.5" />
+                                <span className="hidden md:inline">SEARCH</span>
                             </button>
 
                             <div className="relative">
@@ -86,10 +84,15 @@ const Navigation = () => {
                                     onClick={() => setSyncOpen(!syncOpen)}
                                     className={`flex items-center space-x-2 transition-colors ${syncOpen || roomCode ? 'text-foreground' : 'text-gray-400 hover:text-foreground'}`}
                                 >
-                                    <Radio size={14} className={roomCode ? "animate-pulse" : ""} />
-                                    <span>SYNC</span>
+                                    <div className="relative">
+                                        <Radio className={`w-5 h-5 md:w-3.5 md:h-3.5 ${roomCode ? "animate-pulse" : ""}`} />
+                                        {roomCode && (
+                                            <div className="md:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                        )}
+                                    </div>
+                                    <span className="hidden md:inline">SYNC</span>
                                     {roomCode && (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                        <div className="hidden md:block w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                                     )}
                                 </button>
 
@@ -106,9 +109,10 @@ const Navigation = () => {
                                     )}
                                 </AnimatePresence>
                             </div>
+                        </div>
 
-
-
+                        {/* Desktop User/Auth Actions */}
+                        <div className="hidden md:flex items-center space-x-8 text-[11px] uppercase tracking-[0.2em] font-medium">
                             {user ? (
                                 <div className="flex items-center space-x-8">
                                     {user.role === 'admin' && (
@@ -121,9 +125,7 @@ const Navigation = () => {
                                     </Link>
 
                                     <Link to="/profile">
-                                        <div className="w-8 h-8 rounded-full bg-[#0d0d0d] border border-white/10
-                                  flex items-center justify-center 
-                                  text-white text-[10px] font-serif overflow-hidden">
+                                        <div className="w-8 h-8 rounded-full bg-[#0d0d0d] border border-white/10 flex items-center justify-center text-white text-[10px] font-serif overflow-hidden">
                                             {user.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                                         </div>
                                     </Link>
