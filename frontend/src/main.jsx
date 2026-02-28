@@ -9,14 +9,20 @@ import { SyncProvider } from './context/SyncContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { KindeProvider } from "@kinde-oss/kinde-auth-react";
 
+// Fallbacks prevent 'new URL()' from throwing Invalid URL and blanking the entire page 
+// when Vercel environment variables are missing or undefined.
+const kindeDomain = import.meta.env.VITE_KINDE_DOMAIN || 'https://fallback.kinde.com';
+const kindeRedirectUri = import.meta.env.VITE_KINDE_REDIRECT_URL || window.location.origin;
+const kindeLogoutUri = import.meta.env.VITE_KINDE_LOGOUT_URL || window.location.origin;
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <KindeProvider
-        clientId={import.meta.env.VITE_KINDE_CLIENT_ID}
-        domain={import.meta.env.VITE_KINDE_DOMAIN}
-        redirectUri={import.meta.env.VITE_KINDE_REDIRECT_URL}
-        logoutUri={import.meta.env.VITE_KINDE_LOGOUT_URL}
+        clientId={import.meta.env.VITE_KINDE_CLIENT_ID || 'fallback_id'}
+        domain={kindeDomain}
+        redirectUri={kindeRedirectUri}
+        logoutUri={kindeLogoutUri}
       >
         <ThemeProvider>
           <AuthProvider>

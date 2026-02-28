@@ -5,8 +5,10 @@ import User from '../models/User.js';
 
 dotenv.config();
 
+const kindeDomain = process.env.KINDE_DOMAIN || 'https://fallback.kinde.com';
+
 const client = jwksClient({
-    jwksUri: `${process.env.KINDE_DOMAIN}/.well-known/jwks.json`,
+    jwksUri: `${kindeDomain}/.well-known/jwks.json`,
 });
 
 function getKey(header, callback) {
