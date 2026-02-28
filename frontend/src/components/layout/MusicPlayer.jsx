@@ -51,7 +51,7 @@ const MusicPlayer = () => {
             <div className="max-w-[1920px] mx-auto w-full flex items-center justify-between md:grid md:grid-cols-3 gap-2 md:gap-4 relative">
 
                 {/* Mobile absolute progress bar */}
-                <div className="absolute -top-[1px] md:hidden left-0 right-0 h-[2px] bg-border cursor-pointer group"
+                <div className="absolute -top-[1px] md:hidden left-0 right-0 h-[2px] bg-white/5 cursor-pointer group"
                     onClick={(e) => {
                         e.stopPropagation();
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -105,30 +105,30 @@ const MusicPlayer = () => {
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col items-center space-y-2 md:space-y-3 shrink-0">
-                    <div className="flex items-center space-x-3 md:space-x-8">
+                <div className="flex flex-col items-center justify-center space-y-2 md:space-y-3 shrink-0">
+                    <div className="flex items-center space-x-6 md:space-x-8">
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleShuffle(); }}
-                            className={`hidden sm:block transition-colors ${isShuffle ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
+                            className={`hidden md:block transition-colors ${isShuffle ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
                         >
-                            <Shuffle size={14} />
+                            <Shuffle size={16} />
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); previousSong(); }}
-                            className="text-gray-300 hover:text-foreground transition-colors p-1"
+                            className="hidden sm:block text-gray-300 hover:text-foreground transition-colors p-1"
                         >
-                            <SkipBack className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
+                            <SkipBack className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" strokeWidth={1} />
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-105 transition-all shadow-lg active:scale-95 z-10 shrink-0"
+                            className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-105 transition-all shadow-lg active:scale-95 z-10 shrink-0"
                         >
                             {isPlaying ? (
-                                <Pause className="w-4 h-4 md:w-[18px] md:h-[18px]" fill="currentColor" strokeWidth={1} />
+                                <Pause className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
                             ) : (
-                                <Play className="w-4 h-4 md:w-[18px] md:h-[18px] ml-0.5" fill="currentColor" strokeWidth={1} />
+                                <Play className="w-4 h-4 md:w-5 md:h-5 ml-1" fill="currentColor" strokeWidth={1} />
                             )}
                         </button>
 
@@ -136,14 +136,14 @@ const MusicPlayer = () => {
                             onClick={(e) => { e.stopPropagation(); nextSong(); }}
                             className="text-gray-300 hover:text-foreground transition-colors p-1"
                         >
-                            <SkipForward className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
+                            <SkipForward className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" strokeWidth={1} />
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleRepeat(); }}
-                            className={`hidden sm:block transition-colors relative p-1 ${repeatMode !== 'off' ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
+                            className={`hidden md:block transition-colors relative p-1 ${repeatMode !== 'off' ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
                         >
-                            <Repeat size={14} />
+                            <Repeat size={16} />
                             {repeatMode === 'one' && <span className="absolute -top-1.5 -right-1.5 text-[8px] font-bold">1</span>}
                         </button>
                     </div>
