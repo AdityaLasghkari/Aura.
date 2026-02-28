@@ -4,6 +4,7 @@ import {
     loginUser,
     getUserProfile,
     updateUserProfile,
+    syncUser,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -11,6 +12,7 @@ const router = express.Router();
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/sync', protect, syncUser);
 router.get('/me', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
 

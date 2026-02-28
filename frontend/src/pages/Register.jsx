@@ -1,30 +1,9 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
 import { ArrowRight } from 'lucide-react';
 
 const Register = () => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
     const { register } = useAuth();
-    const navigate = useNavigate();
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await register({ name, email, password });
-            toast.success('ACCOUNT CREATED SUCCESSFULLY');
-            navigate('/');
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'REGISTRATION FAILED');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
@@ -43,56 +22,15 @@ const Register = () => {
                     <h1 className="section-heading">JOIN THE<br />ARCHITECTURE.</h1>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="space-y-6">
-                        <div className="space-y-1">
-                            <label className="text-[10px] tracking-widest text-gray-400 uppercase">Full Name</label>
-                            <input
-                                type="text"
-                                required
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full bg-transparent border-b border-border py-3 focus:outline-none focus:border-foreground transition-colors text-foreground"
-                                placeholder="YOUR NAME"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] tracking-widest text-gray-400 uppercase">Email Address</label>
-                            <input
-                                type="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-transparent border-b border-border py-3 focus:outline-none focus:border-foreground transition-colors text-foreground"
-                                placeholder="EMAIL@EXAMPLE.COM"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] tracking-widest text-gray-400 uppercase">Password</label>
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-transparent border-b border-border py-3 focus:outline-none focus:border-foreground transition-colors text-foreground"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                    </div>
-
+                <div className="space-y-8">
                     <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-5 bg-foreground text-background text-[11px] tracking-[0.4em] uppercase flex items-center justify-center space-x-4 group disabled:opacity-50 border border-transparent hover:bg-background hover:text-foreground hover:border-foreground transition-all font-bold"
+                        onClick={register}
+                        className="w-full py-5 bg-foreground text-background text-[11px] tracking-[0.4em] uppercase flex items-center justify-center space-x-4 group border border-transparent hover:bg-background hover:text-foreground hover:border-foreground transition-all font-bold"
                     >
-                        {loading ? 'CREATING IDENTITY...' : (
-                            <>
-                                <span>JOIN THE CURATION</span>
-                                <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
-                            </>
-                        )}
+                        <span>JOIN THE CURATION</span>
+                        <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
                     </button>
-                </form>
+                </div>
 
                 <div className="text-center pt-8 border-t border-border flex flex-col space-y-4">
                     <p className="text-[11px] text-gray-400 tracking-widest uppercase">Already a member?</p>

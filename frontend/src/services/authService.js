@@ -16,6 +16,11 @@ const authService = {
         return response.data;
     },
 
+    syncProfile: async (kindeProfile) => {
+        const response = await api.post('/auth/sync', kindeProfile);
+        return response.data;
+    },
+
     updateProfile: async (profileData) => {
         const response = await api.put('/auth/profile', profileData);
         return response.data;
