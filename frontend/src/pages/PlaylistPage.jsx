@@ -137,10 +137,10 @@ const PlaylistPage = () => {
                                 <Play size={14} fill="currentColor" />
                                 <span>Play All</span>
                             </motion.button>
-                            <button className="w-12 h-12 hidden md:flex items-center justify-center border border-border hover:border-foreground transition-colors">
+                            <button className="w-12 h-12 flex items-center justify-center border border-border hover:border-foreground transition-colors">
                                 <Heart size={16} />
                             </button>
-                            <button className="w-12 h-12 hidden md:flex items-center justify-center border border-border hover:border-foreground transition-colors"
+                            <button className="w-12 h-12 flex items-center justify-center border border-border hover:border-foreground transition-colors"
                                 onClick={() => {
                                     let url = window.location.href;
                                     if (!playlist.isPublic && playlist.shareCode && !url.includes('code=')) {
@@ -152,7 +152,7 @@ const PlaylistPage = () => {
                                 <Share2 size={16} />
                             </button>
                             {currentUser?._id === playlist.userId?._id && (
-                                <button className="w-12 h-12 hidden md:flex items-center justify-center border border-border text-red-500 hover:border-red-500 transition-colors"
+                                <button className="w-12 h-12 flex items-center justify-center border border-border text-red-500 hover:border-red-500 transition-colors"
                                     onClick={handleDeletePlaylist}
                                     title="Delete Playlist">
                                     <Trash2 size={16} />

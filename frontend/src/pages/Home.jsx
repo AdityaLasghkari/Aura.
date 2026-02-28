@@ -37,7 +37,7 @@ const Home = () => {
     const [recentSongs, setRecentSongs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { playSong } = useMusic();
-    const { user } = useAuth();
+    const { user, register } = useAuth();
     const { joinRoom } = useSync();
 
     useEffect(() => {
@@ -204,10 +204,10 @@ const Home = () => {
 
                         <div className="pt-12">
                             <motion.button
-                                onClick={() => navigate('/register')}
+                                onClick={register}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="px-16 py-5 bg-white text-black text-[11px] tracking-[0.5em] uppercase font-bold hover:bg-transparent hover:text-white border border-white transition-all duration-700 font-sans"
+                                className="px-16 py-5 bg-white text-black text-[11px] tracking-[0.5em] uppercase font-bold hover:bg-transparent hover:text-white border border-white transition-all duration-700 font-sans cursor-pointer"
                             >
                                 CREATE YOUR ACCOUNT
                             </motion.button>

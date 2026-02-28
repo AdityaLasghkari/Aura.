@@ -52,14 +52,14 @@ const VinylPlayerPage = () => {
                     onClick={() => navigate(-1)}
                     className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center hover:bg-muted rounded-full transition-colors"
                 >
-                    <ChevronDown size={20} md:size={24} />
+                    <ChevronDown className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
                 <div className="text-center">
                     <p className="label-text">NOW RESONATING</p>
                     <p className="text-[10px] tracking-[0.2em] font-medium text-gray-400 mt-1 uppercase">{currentSong.genre}</p>
                 </div>
                 <button className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center hover:bg-muted rounded-full transition-colors">
-                    <Share2 size={18} md:size={20} strokeWidth={1.5} />
+                    <Share2 className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={1.5} />
                 </button>
             </div>
 
@@ -179,8 +179,8 @@ const VinylPlayerPage = () => {
                         </button>
 
                         <div className="flex items-center space-x-6 md:space-x-12">
-                            <button onClick={previousSong} className="hover:scale-110 transition-transform">
-                                <SkipBack size={24} md:size={32} fill="currentColor" strokeWidth={1} />
+                            <button onClick={previousSong} className="hover:scale-110 transition-transform flex items-center justify-center">
+                                <SkipBack className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" strokeWidth={1} />
                             </button>
 
                             <button
@@ -188,14 +188,14 @@ const VinylPlayerPage = () => {
                                 className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-105 transition-all shadow-xl shadow-foreground/10"
                             >
                                 {isPlaying ? (
-                                    <Pause size={24} md:size={32} fill="currentColor" strokeWidth={1} />
+                                    <Pause className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" strokeWidth={1} />
                                 ) : (
-                                    <Play size={24} md:size={32} className="ml-2" fill="currentColor" strokeWidth={1} />
+                                    <Play className="w-6 h-6 md:w-8 md:h-8 ml-2" fill="currentColor" strokeWidth={1} />
                                 )}
                             </button>
 
-                            <button onClick={nextSong} className="hover:scale-110 transition-transform">
-                                <SkipForward size={24} md:size={32} fill="currentColor" strokeWidth={1} />
+                            <button onClick={nextSong} className="hover:scale-110 transition-transform flex items-center justify-center">
+                                <SkipForward className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" strokeWidth={1} />
                             </button>
                         </div>
 

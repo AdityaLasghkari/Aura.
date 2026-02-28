@@ -45,32 +45,47 @@ const MusicPlayer = () => {
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             onClick={handlePlayerClick}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-2xl border-t border-border px-8 h-24 flex items-center cursor-pointer group/player"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-t border-border px-4 md:px-8 h-20 md:h-24 flex items-center cursor-pointer group/player"
         >
 
-            <div className="max-w-[1920px] mx-auto w-full grid grid-cols-3 items-center">
+            <div className="max-w-[1920px] mx-auto w-full flex items-center justify-between md:grid md:grid-cols-3 gap-2 md:gap-4 relative">
+
+                {/* Mobile absolute progress bar */}
+                <div className="absolute -top-[1px] md:hidden left-0 right-0 h-[2px] bg-border cursor-pointer group"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        seek((x / rect.width) * 100);
+                    }}>
+                    <div
+                        className="absolute top-0 left-0 h-full bg-foreground transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+
                 {/* Song Info */}
-                <div className="flex items-center space-x-6">
-                    <div className="flex items-center space-x-5 group player-info-zone cursor-pointer">
-                        <div className="w-14 h-14 bg-muted overflow-hidden relative shadow-sm">
+                <div className="flex items-center space-x-3 md:space-x-6 flex-1 min-w-0 pr-2 md:pr-0">
+                    <div className="flex items-center space-x-3 md:space-x-5 group player-info-zone cursor-pointer shrink-0 min-w-0">
+                        <div className="w-10 h-10 md:w-14 md:h-14 bg-muted overflow-hidden relative shadow-sm shrink-0">
                             <img
                                 src={currentSong.coverUrl}
                                 alt={currentSong.title}
                                 className={`w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 ${isPlaying ? 'grayscale-0' : 'grayscale'}`}
                             />
                             {isPlaying && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                                     <div className="flex space-x-0.5 h-3 items-end">
-                                        <div className="w-0.5 bg-white animate-bounce" />
-                                        <div className="w-0.5 bg-white animate-[bounce_0.8s_infinite] delay-100" />
-                                        <div className="w-0.5 bg-white animate-[bounce_0.7s_infinite] delay-200" />
+                                        <div className="w-[1px] md:w-0.5 bg-white animate-bounce" />
+                                        <div className="w-[1px] md:w-0.5 bg-white animate-[bounce_0.8s_infinite] delay-100" />
+                                        <div className="w-[1px] md:w-0.5 bg-white animate-[bounce_0.7s_infinite] delay-200" />
                                     </div>
                                 </div>
                             )}
                         </div>
-                        <div className="min-w-0 pr-4">
-                            <h4 className="font-serif text-lg leading-tight truncate group-hover:text-foreground transition-colors">{currentSong.title}</h4>
-                            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mt-0.5 font-medium truncate font-sans">{currentSong.artist}</p>
+                        <div className="min-w-0 pr-2 md:pr-4 truncate">
+                            <h4 className="font-serif text-sm md:text-lg leading-tight truncate group-hover:text-foreground transition-colors">{currentSong.title}</h4>
+                            <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-gray-400 mt-0.5 font-medium truncate font-sans">{currentSong.artist}</p>
                         </div>
                     </div>
 
@@ -79,9 +94,8 @@ const MusicPlayer = () => {
                             e.stopPropagation();
                             toggleLike(currentSong._id);
                         }}
-                        className={`transition-colors relative z-10 ${isLiked(currentSong._id) ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
+                        className={`hidden md:block transition-colors relative z-10 shrink-0 ${isLiked(currentSong._id) ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
                     >
-
                         <Heart
                             size={16}
                             strokeWidth={1.5}
@@ -91,53 +105,51 @@ const MusicPlayer = () => {
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col items-center space-y-3">
-                    <div className="flex items-center space-x-8">
+                <div className="flex flex-col items-center space-y-2 md:space-y-3 shrink-0">
+                    <div className="flex items-center space-x-3 md:space-x-8">
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleShuffle(); }}
-                            className={`transition-colors ${isShuffle ? 'text-foreground' : 'text-gray-200 hover:text-foreground'}`}
+                            className={`hidden sm:block transition-colors ${isShuffle ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
                         >
                             <Shuffle size={14} />
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); previousSong(); }}
-                            className="text-gray-300 hover:text-foreground transition-colors"
+                            className="text-gray-300 hover:text-foreground transition-colors p-1"
                         >
-                            <SkipBack size={20} fill="currentColor" strokeWidth={1} />
+                            <SkipBack className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="w-11 h-11 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-105 transition-all shadow-lg active:scale-95 z-10"
+                            className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-foreground text-background flex items-center justify-center hover:scale-105 transition-all shadow-lg active:scale-95 z-10 shrink-0"
                         >
                             {isPlaying ? (
-                                <Pause size={18} fill="currentColor" strokeWidth={1} />
+                                <Pause className="w-4 h-4 md:w-[18px] md:h-[18px]" fill="currentColor" strokeWidth={1} />
                             ) : (
-                                <Play size={18} className="ml-0.5" fill="currentColor" strokeWidth={1} />
+                                <Play className="w-4 h-4 md:w-[18px] md:h-[18px] ml-0.5" fill="currentColor" strokeWidth={1} />
                             )}
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); nextSong(); }}
-                            className="text-gray-300 hover:text-foreground transition-colors"
+                            className="text-gray-300 hover:text-foreground transition-colors p-1"
                         >
-                            <SkipForward size={20} fill="currentColor" strokeWidth={1} />
+                            <SkipForward className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
                         </button>
-
 
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleRepeat(); }}
-                            className={`transition-colors relative ${repeatMode !== 'off' ? 'text-foreground' : 'text-gray-200 hover:text-foreground'}`}
+                            className={`hidden sm:block transition-colors relative p-1 ${repeatMode !== 'off' ? 'text-foreground' : 'text-gray-300 hover:text-foreground'}`}
                         >
                             <Repeat size={14} />
                             {repeatMode === 'one' && <span className="absolute -top-1.5 -right-1.5 text-[8px] font-bold">1</span>}
                         </button>
-
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="w-full max-w-lg flex items-center space-x-4">
+                    {/* Desktop Progress Bar */}
+                    <div className="hidden md:flex w-full max-w-lg items-center space-x-4">
                         <span className="text-[9px] text-gray-400 font-mono tabular-nums w-8 text-right">
                             {formatTime((progress / 100) * (currentSong.duration || 0))}
                         </span>
@@ -164,8 +176,8 @@ const MusicPlayer = () => {
                 </div>
 
                 {/* Additional Actions */}
-                <div className="flex items-center justify-end space-x-8">
-                    <div className="flex items-center space-x-4 group w-32">
+                <div className="hidden md:flex items-center justify-end space-x-8 min-w-0 pr-2">
+                    <div className="flex items-center space-x-4 group w-32 shrink-0">
                         <Volume2 size={16} className="text-gray-300 group-hover:text-foreground transition-colors" />
                         <div className="flex-1 h-[1px] bg-border relative cursor-pointer"
                             onClick={(e) => {
@@ -184,7 +196,7 @@ const MusicPlayer = () => {
 
                     <Link
                         to="/player"
-                        className="text-gray-300 hover:text-foreground transition-colors"
+                        className="text-gray-300 hover:text-foreground transition-colors shrink-0 p-2"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Maximize2 size={16} />
