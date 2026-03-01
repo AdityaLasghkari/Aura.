@@ -10,7 +10,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 export const SyncProvider = ({ children }) => {
     const { user } = useAuth();
-    const { playSong, togglePlay, setPlaying, seek, currentSong, isPlaying, currentTime } = useMusic();
+    const { playSong, togglePlay, setPlaying, seek, currentSong, isPlaying, currentTime, setPlaybackLock } = useMusic();
 
     const [socket, setSocket] = useState(null);
     const [roomCode, setRoomCode] = useState(null);
@@ -85,7 +85,7 @@ export const SyncProvider = ({ children }) => {
             // Check if this update is actually a change to avoid redundant traffic
             const isChange = state.isPlaying !== lastBroadcastData.current.isPlaying ||
                 state.songId !== lastBroadcastData.current.songId ||
-                Math.abs(state.currentTime - lastBroadcastData.current.time) > 2;
+                Math.abs(state.currentTime - lastBroadcastData.current.time) > 1.0;
 
             if (isChange) {
                 socket.emit('playback_update', { roomCode, ...state, userId: uid });
@@ -97,6 +97,12 @@ export const SyncProvider = ({ children }) => {
             }
         }
     }, [socket, roomCode, isHost, isKing, isCollaborative, user]);
+
+    // Update playback lock state
+    const canControlPlayback = !roomCode || isHost || isKing || isCollaborative;
+    useEffect(() => {
+        setPlaybackLock(canControlPlayback);
+    }, [canControlPlayback, setPlaybackLock]);
 
     // Socket Listeners
     useEffect(() => {
@@ -127,11 +133,11 @@ export const SyncProvider = ({ children }) => {
                     try {
                         lastSyncedSongId.current = songId;
                         if (song.audioUrl) {
-                            playSong(song);
+                            playSong(song, [], true);
                         } else {
                             const response = await songService.getSongById(songId);
                             if (response.success) {
-                                playSong(response.data.song);
+                                playSong(response.data.song, [], true);
                             }
                         }
                     } catch (error) {
@@ -140,8 +146,8 @@ export const SyncProvider = ({ children }) => {
                     }
                 }
 
-                if (data.isPlaying !== undefined) setPlaying(data.isPlaying);
-                if (data.currentTime !== undefined && Math.abs(data.currentTime - timeRef.current) > 2.5) seek(data.currentTime, false);
+                if (data.isPlaying !== undefined) setPlaying(data.isPlaying, true);
+                if (data.currentTime !== undefined && Math.abs(data.currentTime - timeRef.current) > 0.5) seek(data.currentTime, false, true);
             }
         });
 
@@ -161,16 +167,16 @@ export const SyncProvider = ({ children }) => {
                 lastSyncedSongId.current = songId;
                 try {
                     const response = await songService.getSongById(songId);
-                    if (response.success) playSong(response.data.song);
+                    if (response.success) playSong(response.data.song, [], true);
                 } catch (e) { console.error(e); }
             }
 
             if (syncPlaying !== undefined && syncPlaying !== playingRef.current) {
-                setPlaying(syncPlaying);
+                setPlaying(syncPlaying, true);
             }
 
-            if (syncTime !== undefined && Math.abs(syncTime - timeRef.current) > 1.5) {
-                seek(syncTime, false);
+            if (syncTime !== undefined && Math.abs(syncTime - timeRef.current) > 0.5) {
+                seek(syncTime, false, true);
             }
         });
 
@@ -236,7 +242,8 @@ export const SyncProvider = ({ children }) => {
             toggleCollaborative,
             toggleKing,
             sendMessage,
-            updatePlayback
+            updatePlayback,
+            canControlPlayback: !roomCode || isHost || isKing || isCollaborative
         }}>
             {children}
         </SyncContext.Provider>

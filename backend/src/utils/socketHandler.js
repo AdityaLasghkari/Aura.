@@ -59,14 +59,14 @@ const socketHandler = (io) => {
                     const isKing = room.kings.some(k => k.toString() === userId);
 
                     if (isHost || isKing || room.isCollaborative) {
-                        // Update room state in DB
+                        // Broadcast immediately to remove latency constraint
+                        socket.to(roomCode).emit('playback_sync', { isPlaying, currentTime, songId, userId });
+
+                        // Update room state in DB asynchronously without waiting
                         room.isPlaying = isPlaying;
                         room.currentTime = currentTime;
                         if (songId) room.currentSong = songId;
-                        await room.save();
-
-                        // Broadcast to all except sender
-                        socket.to(roomCode).emit('playback_sync', { isPlaying, currentTime, songId, userId });
+                        room.save().catch(err => console.error('PLAYBACK_SAVE_ERROR:', err));
                     }
                 }
             } catch (error) {

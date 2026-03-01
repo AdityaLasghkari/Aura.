@@ -24,6 +24,12 @@ export const MusicProvider = ({ children }) => {
     const isShuffleRef = useRef(false);
     const repeatModeRef = useRef('off');
 
+    // Playback control lock for restricted sync room users
+    const canChangeRef = useRef(true);
+    const setPlaybackLock = useCallback((canControl) => {
+        canChangeRef.current = canControl;
+    }, []);
+
     const { user } = useAuth();
 
     useEffect(() => {
@@ -75,7 +81,8 @@ export const MusicProvider = ({ children }) => {
         return analyserRef.current;
     };
 
-    const playSong = useCallback((song, songQueue = []) => {
+    const playSong = useCallback((song, songQueue = [], force = false) => {
+        if (!force && !canChangeRef.current) return;
         // RESUME AudioContext
         if (Howler.ctx && Howler.ctx.state === 'suspended') {
             Howler.ctx.resume();
@@ -171,7 +178,8 @@ export const MusicProvider = ({ children }) => {
         }
     }, [volume, currentIndex]);
 
-    const togglePlay = useCallback(() => {
+    const togglePlay = useCallback((force = false) => {
+        if (!force && !canChangeRef.current) return;
         if (!soundRef.current) return;
         if (isPlaying) {
             soundRef.current.pause();
@@ -183,7 +191,8 @@ export const MusicProvider = ({ children }) => {
         }
     }, [isPlaying]);
 
-    const setPlaying = useCallback((shouldPlay) => {
+    const setPlaying = useCallback((shouldPlay, force = false) => {
+        if (!force && !canChangeRef.current) return;
         if (!soundRef.current) return;
         if (shouldPlay && !isPlaying) {
             if (Howler.ctx && Howler.ctx.state === 'suspended') Howler.ctx.resume();
@@ -210,7 +219,8 @@ export const MusicProvider = ({ children }) => {
         }, 1000);
     };
 
-    const seek = useCallback((value, isPercent = true) => {
+    const seek = useCallback((value, isPercent = true, force = false) => {
+        if (!force && !canChangeRef.current) return;
         if (soundRef.current) {
             const duration = soundRef.current.duration();
             const targetTime = isPercent ? (value / 100) * duration : value;
@@ -230,7 +240,8 @@ export const MusicProvider = ({ children }) => {
         }
     };
 
-    const nextSong = () => {
+    const nextSong = (force = false) => {
+        if (!force && !canChangeRef.current) return;
         const currentQueue = queueRef.current;
         const currentIdx = currentIndexRef.current;
         const shuffle = isShuffleRef.current;
@@ -247,7 +258,8 @@ export const MusicProvider = ({ children }) => {
         currentIndexRef.current = nextIdx;
     };
 
-    const previousSong = () => {
+    const previousSong = (force = false) => {
+        if (!force && !canChangeRef.current) return;
         const currentQueue = queueRef.current;
         const currentIdx = currentIndexRef.current;
 
@@ -267,7 +279,7 @@ export const MusicProvider = ({ children }) => {
         if (mode === 'one') {
             soundRef.current.play();
         } else if (mode === 'all' || currentIdx < currentQueue.length - 1 || shuffle) {
-            nextSong();
+            nextSong(true);
         } else {
             setIsPlaying(false);
             setProgress(0);
@@ -309,7 +321,8 @@ export const MusicProvider = ({ children }) => {
                 toggleLike,
                 currentTime: soundRef.current?.seek() || 0,
                 duration: soundRef.current?.duration() || 0,
-                analyser: analyserRef.current // Note: This will update when getAnalyser runs
+                analyser: analyserRef.current, // Note: This will update when getAnalyser runs
+                setPlaybackLock
             }}
 
         >
