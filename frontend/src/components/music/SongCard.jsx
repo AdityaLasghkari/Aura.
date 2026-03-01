@@ -82,16 +82,16 @@ const SongCard = ({ song, queue = [], aspectRatio = 'aspect-[4/5]', className = 
             {/* Content */}
             <div className="space-y-2">
                 {/* Title */}
-                <h3 className="font-serif text-xl md:text-2xl leading-tight group-hover:text-foreground transition-colors duration-300">
+                <h3 className="font-serif text-[13px] md:text-2xl leading-tight group-hover:text-foreground transition-colors duration-300">
                     {song.title}
                 </h3>
 
                 {/* Metadata */}
                 <div className="flex justify-between items-end">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-medium">
+                    <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-gray-400 font-medium truncate pr-2">
                         {song.artist}
                     </p>
-                    <span className="text-[10px] text-gray-300 font-light tracking-widest">
+                    <span className="text-[8px] md:text-[10px] text-gray-300 font-light tracking-widest shrink-0">
                         {new Date(song.releaseDate || Date.now()).getFullYear()}
                     </span>
                 </div>
@@ -124,7 +124,7 @@ const SongCard = ({ song, queue = [], aspectRatio = 'aspect-[4/5]', className = 
                         </button>
                     </div>
 
-                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-medium">
+                    <span className="text-[8px] md:text-[9px] text-gray-400 uppercase tracking-widest font-medium">
                         {song.genre}
                     </span>
                 </div>

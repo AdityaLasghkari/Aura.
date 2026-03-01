@@ -45,7 +45,7 @@ const MusicPlayer = () => {
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             onClick={handlePlayerClick}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 md:bg-background/80 backdrop-blur-3xl border-t border-white/5 md:border-border px-3 md:px-8 h-[68px] md:h-24 flex items-center cursor-pointer group/player shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-none"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 md:bg-background/80 backdrop-blur-3xl border-t border-white/5 md:border-border px-3 md:px-8 h-[56px] md:h-24 flex items-center cursor-pointer group/player shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-none"
         >
 
             <div className="max-w-[1920px] mx-auto w-full flex items-center justify-between md:grid md:grid-cols-3 gap-2 md:gap-4 relative">
@@ -67,7 +67,7 @@ const MusicPlayer = () => {
                 {/* Song Info */}
                 <div className="flex items-center space-x-3 md:space-x-6 flex-1 min-w-0 pr-2 md:pr-0">
                     <div className="flex items-center space-x-3 md:space-x-5 group player-info-zone cursor-pointer shrink-0 min-w-0">
-                        <div className="w-10 h-10 md:w-14 md:h-14 bg-muted overflow-hidden relative shadow-sm shrink-0 rounded-md md:rounded-none">
+                        <div className="w-9 h-9 md:w-14 md:h-14 bg-muted overflow-hidden relative shadow-sm shrink-0 rounded-md md:rounded-none">
                             <img
                                 src={currentSong.coverUrl}
                                 alt={currentSong.title}
@@ -84,7 +84,7 @@ const MusicPlayer = () => {
                             )}
                         </div>
                         <div className="min-w-0 pr-2 md:pr-4 truncate">
-                            <h4 className="font-serif text-[15px] md:text-lg leading-tight truncate group-hover:text-foreground transition-colors">{currentSong.title}</h4>
+                            <h4 className="font-serif text-[13px] md:text-lg leading-tight truncate group-hover:text-foreground transition-colors">{currentSong.title}</h4>
                             <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-gray-400 mt-[2px] font-medium truncate font-sans">{currentSong.artist}</p>
                         </div>
                     </div>
@@ -133,12 +133,12 @@ const MusicPlayer = () => {
 
                         <button
                             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="w-12 h-12 flex items-center justify-center text-foreground md:bg-foreground md:text-background md:rounded-full md:hover:scale-105 transition-all md:shadow-lg active:scale-95 z-10 shrink-0"
+                            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-foreground md:bg-foreground md:text-background md:rounded-full md:hover:scale-105 transition-all md:shadow-lg active:scale-95 z-10 shrink-0"
                         >
                             {isPlaying ? (
-                                <Pause className="w-7 h-7 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
+                                <Pause className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" strokeWidth={1} />
                             ) : (
-                                <Play className="w-7 h-7 md:w-5 md:h-5 ml-1.5 md:ml-1" fill="currentColor" strokeWidth={1} />
+                                <Play className="w-5 h-5 md:w-5 md:h-5 ml-1.5 md:ml-1" fill="currentColor" strokeWidth={1} />
                             )}
                         </button>
 

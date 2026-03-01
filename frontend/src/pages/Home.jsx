@@ -65,7 +65,7 @@ const Home = () => {
     };
 
     const getOffsetClass = (index) => {
-        return index % 3 === 1 ? 'mt-32' : index % 3 === 2 ? 'mt-16' : '';
+        return index % 3 === 1 ? 'md:mt-32' : index % 3 === 2 ? 'md:mt-16' : '';
     };
 
     return (
@@ -103,7 +103,7 @@ const Home = () => {
                         <p className="label-text pb-4">VOLUME 04 / 2026</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-20">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-12 lg:gap-20">
                         {loading ? (
                             Array(8).fill(0).map((_, i) => (
                                 <div key={i} className="animate-pulse space-y-4">
@@ -157,7 +157,7 @@ const Home = () => {
 
                                 >
                                     <div className="flex items-center space-x-4 md:space-x-12 overflow-hidden">
-                                        <span className="font-serif text-2xl md:text-4xl text-muted group-hover:text-foreground transition-colors duration-500 flex-shrink-0">
+                                        <span className="font-serif text-lg md:text-4xl text-muted group-hover:text-foreground transition-colors duration-500 flex-shrink-0">
                                             {(index + 1).toString().padStart(2, '0')}
                                         </span>
                                         <div className="flex items-center space-x-4 md:space-x-6 overflow-hidden">
@@ -165,7 +165,7 @@ const Home = () => {
                                                 <TrendingImage song={song} />
                                             </div>
                                             <div className="min-w-0">
-                                                <h4 className="text-lg md:text-xl font-serif truncate">{song.title}</h4>
+                                                <h4 className="text-[13px] md:text-xl font-serif truncate">{song.title}</h4>
                                                 <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-gray-400 mt-1 truncate">{song.artist}</p>
                                             </div>
                                         </div>
