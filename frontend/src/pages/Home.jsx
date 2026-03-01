@@ -34,7 +34,7 @@ const Home = () => {
     const navigate = useNavigate();
     const [trendingSongs, setTrendingSongs] = useState([]);
 
-    const [recentSongs, setRecentSongs] = useState([]);
+    const [randomSongs, setRandomSongs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { playSong } = useMusic();
     const { user, register } = useAuth();
@@ -43,12 +43,12 @@ const Home = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [trending, recent] = await Promise.all([
+                const [trending, random] = await Promise.all([
                     songService.getTrending(5),
-                    songService.getRecent(8)
+                    songService.getRandom(8)
                 ]);
                 setTrendingSongs(trending.data.songs);
-                setRecentSongs(recent.data.songs);
+                setRandomSongs(random.data.songs);
             } catch (error) {
                 console.error('Error fetching songs:', error);
             } finally {
@@ -99,7 +99,7 @@ const Home = () => {
             <section className="px-6 md:px-12 lg:px-24">
                 <div className="max-w-[1920px] mx-auto">
                     <div className="flex justify-between items-end mb-16 border-b border-border pb-8">
-                        <h2 className="section-heading">LATEST<br />RELEASES</h2>
+                        <h2 className="section-heading">RANDOM<br />SONGS</h2>
                         <p className="label-text pb-4">VOLUME 04 / 2026</p>
                     </div>
 
@@ -113,11 +113,11 @@ const Home = () => {
                                 </div>
                             ))
                         ) : (
-                            recentSongs.map((song, index) => (
+                            randomSongs.map((song, index) => (
                                 <SongCard
                                     key={song._id}
                                     song={song}
-                                    queue={recentSongs}
+                                    queue={randomSongs}
                                     aspectRatio={getAspectRatio(index)}
                                     className={getOffsetClass(index)}
                                 />

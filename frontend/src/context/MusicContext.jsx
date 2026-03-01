@@ -18,6 +18,12 @@ export const MusicProvider = ({ children }) => {
     const [repeatMode, setRepeatMode] = useState('off');
     const [likedSongsIds, setLikedSongsIds] = useState([]);
 
+    // Refs for state accessed inside Howler callbacks to avoid stale closures
+    const queueRef = useRef([]);
+    const currentIndexRef = useRef(0);
+    const isShuffleRef = useRef(false);
+    const repeatModeRef = useRef('off');
+
     const { user } = useAuth();
 
     useEffect(() => {
@@ -87,8 +93,11 @@ export const MusicProvider = ({ children }) => {
 
         if (songQueue.length > 0) {
             setQueue(songQueue);
+            queueRef.current = songQueue;
             const index = songQueue.findIndex(s => s._id === song._id);
-            setCurrentIndex(index !== -1 ? index : 0);
+            const newIndex = index !== -1 ? index : 0;
+            setCurrentIndex(newIndex);
+            currentIndexRef.current = newIndex;
         }
 
         setCurrentSong(song);
@@ -222,28 +231,42 @@ export const MusicProvider = ({ children }) => {
     };
 
     const nextSong = () => {
-        if (queue.length === 0) return;
+        const currentQueue = queueRef.current;
+        const currentIdx = currentIndexRef.current;
+        const shuffle = isShuffleRef.current;
+
+        if (currentQueue.length === 0) return;
         let nextIdx;
-        if (isShuffle) {
-            nextIdx = Math.floor(Math.random() * queue.length);
+        if (shuffle) {
+            nextIdx = Math.floor(Math.random() * currentQueue.length);
         } else {
-            nextIdx = (currentIndex + 1) % queue.length;
+            nextIdx = (currentIdx + 1) % currentQueue.length;
         }
-        playSong(queue[nextIdx]);
+        playSong(currentQueue[nextIdx]);
         setCurrentIndex(nextIdx);
+        currentIndexRef.current = nextIdx;
     };
 
     const previousSong = () => {
-        if (queue.length === 0) return;
-        const prevIdx = (currentIndex - 1 + queue.length) % queue.length;
-        playSong(queue[prevIdx]);
+        const currentQueue = queueRef.current;
+        const currentIdx = currentIndexRef.current;
+
+        if (currentQueue.length === 0) return;
+        const prevIdx = (currentIdx - 1 + currentQueue.length) % currentQueue.length;
+        playSong(currentQueue[prevIdx]);
         setCurrentIndex(prevIdx);
+        currentIndexRef.current = prevIdx;
     };
 
     const handleSongEnd = () => {
-        if (repeatMode === 'one') {
+        const mode = repeatModeRef.current;
+        const currentQueue = queueRef.current;
+        const currentIdx = currentIndexRef.current;
+        const shuffle = isShuffleRef.current;
+
+        if (mode === 'one') {
             soundRef.current.play();
-        } else if (repeatMode === 'all' || currentIndex < queue.length - 1 || isShuffle) {
+        } else if (mode === 'all' || currentIdx < currentQueue.length - 1 || shuffle) {
             nextSong();
         } else {
             setIsPlaying(false);
@@ -251,11 +274,15 @@ export const MusicProvider = ({ children }) => {
         }
     };
 
-    const toggleShuffle = () => setIsShuffle(!isShuffle);
+    const toggleShuffle = () => {
+        setIsShuffle(!isShuffle);
+        isShuffleRef.current = !isShuffleRef.current;
+    };
     const toggleRepeat = () => {
         const modes = ['off', 'one', 'all'];
         const nextMode = modes[(modes.indexOf(repeatMode) + 1) % modes.length];
         setRepeatMode(nextMode);
+        repeatModeRef.current = nextMode;
     };
 
     return (

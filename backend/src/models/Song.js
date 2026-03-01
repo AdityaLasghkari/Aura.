@@ -175,15 +175,21 @@ songSchema.methods.decrementLikes = async function () {
 
 // Static method to find trending songs
 songSchema.statics.findTrending = function (limit = 10) {
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-    return this.find({
-        isActive: true,
-        createdAt: { $gte: weekAgo }
-    })
+    return this.find({ isActive: true })
         .sort({ plays: -1, likes: -1 })
         .limit(limit)
         .populate('uploadedBy', 'name');
+};
+
+// Static method to find random songs
+songSchema.statics.findRandom = async function (limit = 8) {
+    const randomSongs = await this.aggregate([
+        { $match: { isActive: true } },
+        { $sample: { size: limit } }
+    ]);
+
+    // We need to populate uploadedBy after aggregation
+    return await this.populate(randomSongs, { path: 'uploadedBy', select: 'name' });
 };
 
 // Static method to find recent songs

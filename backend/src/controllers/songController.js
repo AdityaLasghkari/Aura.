@@ -216,6 +216,15 @@ export const getRecentSongs = async (req, res) => {
     res.json({ success: true, data: { songs: normalizeSongs(songs) } });
 };
 
+// @desc    Get random songs
+// @route   GET /api/songs/random
+// @access  Public
+export const getRandomSongs = async (req, res) => {
+    const limit = parseInt(req.query.limit) || 20;
+    const songs = await Song.findRandom(limit);
+    res.json({ success: true, data: { songs: normalizeSongs(songs) } });
+};
+
 // @desc    Proxy Google Drive stream to avoid CORS issues (supports Range requests for audio)
 // @route   GET /api/songs/stream/:fileId
 // @access  Public

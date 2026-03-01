@@ -21,6 +21,11 @@ const songService = {
         return response.data;
     },
 
+    getRandom: async (limit) => {
+        const response = await api.get('/songs/random', { params: { limit } });
+        return response.data;
+    },
+
     getLiked: async () => {
         const response = await api.get('/songs/liked');
         return response.data;

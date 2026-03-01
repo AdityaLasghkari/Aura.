@@ -7,6 +7,7 @@ import {
     incrementSongPlays,
     getTrendingSongs,
     getRecentSongs,
+    getRandomSongs,
     getLikedSongs,
     getGoogleDriveStream,
     getImageProxy,
@@ -21,6 +22,7 @@ const router = express.Router();
 router.get('/', getSongs);
 router.get('/trending', getTrendingSongs);
 router.get('/recent', getRecentSongs);
+router.get('/random', getRandomSongs);
 router.get('/liked', protect, getLikedSongs);
 router.get('/stream/:fileId', getGoogleDriveStream);
 router.get('/image/:fileId', getImageProxy);
