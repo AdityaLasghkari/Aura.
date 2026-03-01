@@ -14,8 +14,8 @@ export const AuthProvider = ({ children }) => {
         if (!userData) return null;
         return {
             ...userData,
-            _id: userData.id || userData._id,
-            id: userData.id || userData._id
+            _id: userData._id || userData.id,
+            id: userData._id || userData.id
         };
     };
 

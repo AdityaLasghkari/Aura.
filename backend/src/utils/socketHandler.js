@@ -1,11 +1,21 @@
 import { Server } from 'socket.io';
 import Room from '../models/Room.js';
+import User from '../models/User.js';
+
+const resolveUserId = async (userId) => {
+    if (userId && typeof userId === 'string' && userId.startsWith('kp_')) {
+        const user = await User.findOne({ kindeId: userId });
+        return user ? user._id.toString() : userId;
+    }
+    return userId;
+};
 
 const socketHandler = (io) => {
     io.on('connection', (socket) => {
         console.log('New client connected:', socket.id);
 
-        socket.on('join_room', async ({ roomCode, userId }) => {
+        socket.on('join_room', async ({ roomCode, userId: rawUserId }) => {
+            const userId = await resolveUserId(rawUserId);
             console.log(`SYNC_DEBUG: join_room attempt - User: ${userId}, Room: ${roomCode}`);
             socket.join(roomCode);
 
@@ -40,8 +50,9 @@ const socketHandler = (io) => {
             }
         });
 
-        socket.on('playback_update', async ({ roomCode, isPlaying, currentTime, songId, userId }) => {
+        socket.on('playback_update', async ({ roomCode, isPlaying, currentTime, songId, userId: rawUserId }) => {
             try {
+                const userId = await resolveUserId(rawUserId);
                 const room = await Room.findOne({ roomCode });
                 if (room) {
                     const isHost = room.host.toString() === userId;
@@ -63,8 +74,9 @@ const socketHandler = (io) => {
             }
         });
 
-        socket.on('toggle_collaborative', async ({ roomCode, userId }) => {
+        socket.on('toggle_collaborative', async ({ roomCode, userId: rawUserId }) => {
             try {
+                const userId = await resolveUserId(rawUserId);
                 const room = await Room.findOne({ roomCode });
                 if (room && room.host.toString() === userId) {
                     room.isCollaborative = !room.isCollaborative;
@@ -76,8 +88,10 @@ const socketHandler = (io) => {
             }
         });
 
-        socket.on('toggle_king', async ({ roomCode, targetUserId, requesterId }) => {
+        socket.on('toggle_king', async ({ roomCode, targetUserId: rawTargetId, requesterId: rawRequesterId }) => {
             try {
+                const targetUserId = await resolveUserId(rawTargetId);
+                const requesterId = await resolveUserId(rawRequesterId);
                 const room = await Room.findOne({ roomCode });
                 if (room && room.host.toString() === requesterId) {
                     const index = room.kings.indexOf(targetUserId);
@@ -95,9 +109,10 @@ const socketHandler = (io) => {
             }
         });
 
-        socket.on('leave_room', async ({ roomCode, userId }) => {
+        socket.on('leave_room', async ({ roomCode, userId: rawUserId }) => {
             socket.leave(roomCode);
             try {
+                const userId = await resolveUserId(rawUserId);
                 const room = await Room.findOne({ roomCode });
                 if (room) {
                     room.participants = room.participants.filter(p => p.toString() !== userId);
