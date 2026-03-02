@@ -26,14 +26,24 @@ const SongCard = ({ song, queue = [], aspectRatio = 'aspect-[4/5]', className = 
             togglePlay();
         } else {
             playSong(song, queue);
-            songService.incrementPlays(song._id).catch(() => { });
+            if (!song._id?.toString().startsWith('yt_')) {
+                songService.incrementPlays(song._id).catch(() => { });
+            }
         }
     };
 
     const handleLike = async (e) => {
         e.stopPropagation();
         if (!user) {
+            if (song._id?.toString().startsWith('yt_')) {
+                toast.error('YOUTUBE LINKS CANNOT BE LIKED');
+                return;
+            }
             toast.error('PLEASE LOGIN TO LIKE');
+            return;
+        }
+        if (song._id?.toString().startsWith('yt_')) {
+            toast.error('YOUTUBE LINKS CANNOT BE LIKED');
             return;
         }
         try {
@@ -112,6 +122,10 @@ const SongCard = ({ song, queue = [], aspectRatio = 'aspect-[4/5]', className = 
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                if (song._id?.toString().startsWith('yt_')) {
+                                    toast.error('YOUTUBE LINKS CANNOT BE ADDED TO PLAYLISTS');
+                                    return;
+                                }
                                 if (!user) {
                                     toast.error('PLEASE LOGIN TO CREATE PLAYLISTS');
                                     return;

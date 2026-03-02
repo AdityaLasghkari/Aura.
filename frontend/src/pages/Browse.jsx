@@ -7,6 +7,7 @@ import CuratorsList from '../components/music/CuratorsList';
 import songService from '../services/songService';
 import userService from '../services/userService';
 import artistService from '../services/artistService';
+import youtubeService from '../services/youtubeService';
 import { useDebounce } from '../hooks/useDebounce';
 import ArtistHoverRow from '../components/music/ArtistHoverRow';
 
@@ -58,13 +59,22 @@ const Browse = () => {
                     setTotalPages(1);
                 } else {
                     // Fetch songs for playlists/search
-                    const response = await songService.getSongs({
-                        page,
-                        genre,
-                        search: debouncedSearch,
-                        limit: 12
-                    });
-                    setItems(response.data.songs);
+                    const [response, youtubeRes] = await Promise.all([
+                        songService.getSongs({
+                            page,
+                            genre,
+                            search: debouncedSearch,
+                            limit: 12
+                        }),
+                        debouncedSearch && !genre ? youtubeService.search(debouncedSearch).catch(() => ({ data: { songs: [] } })) : Promise.resolve({ data: { songs: [] } })
+                    ]);
+
+                    const combined = [
+                        ...response.data.songs,
+                        ...(youtubeRes.data?.songs || [])
+                    ];
+
+                    setItems(combined);
                     setTotalPages(response.data.totalPages);
                 }
             } catch (error) {

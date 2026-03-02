@@ -1,0 +1,10 @@
+import api from './api';
+
+const youtubeService = {
+    search: async (query) => {
+        const response = await api.get(`/youtube/search?q=${encodeURIComponent(query)}`);
+        return response.data;
+    }
+};
+
+export default youtubeService;

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import songService from '../../services/songService';
 import artistService from '../../services/artistService';
+import youtubeService from '../../services/youtubeService';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useMusic } from '../../context/MusicContext';
 
@@ -41,10 +42,14 @@ const SearchOverlay = ({ isOpen, onClose }) => {
 
             setLoading(true);
             try {
-                // Fetch songs and artists in parallel
-                const [songsRes, artistsRes] = await Promise.all([
+                // Fetch songs, artists, and youtube results in parallel
+                const [songsRes, artistsRes, youtubeRes] = await Promise.all([
                     songService.getSongs({ search: debouncedSearch, limit: 12 }),
-                    artistService.getArtists()
+                    artistService.getArtists(),
+                    youtubeService.search(debouncedSearch).catch((err) => {
+                        console.error('YOUTUBE_FETCH_ERROR:', err);
+                        return { data: { songs: [] } }; // Graceful fallback
+                    })
                 ]);
 
                 // Filter artists locally since there isn't a dedicated search endpoint for them yet
@@ -52,8 +57,14 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                     a.name.toLowerCase().includes(debouncedSearch.toLowerCase())
                 );
 
+                // Combine local and youtube songs
+                const allSongs = [
+                    ...(songsRes.data?.songs || []),
+                    ...(youtubeRes.data?.songs || [])
+                ];
+
                 setResults({
-                    songs: songsRes.data?.songs || [],
+                    songs: allSongs,
                     artists: filteredArtists.slice(0, 6)
                 });
             } catch (error) {

@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { Howl, Howler } from 'howler';
+import YouTube from 'react-youtube';
 import { useAuth } from './AuthContext';
 import songService from '../services/songService';
-
 
 const MusicContext = createContext();
 
@@ -18,11 +18,13 @@ export const MusicProvider = ({ children }) => {
     const [repeatMode, setRepeatMode] = useState('off');
     const [likedSongsIds, setLikedSongsIds] = useState([]);
 
-    // Refs for state accessed inside Howler callbacks to avoid stale closures
+    // Refs for state accessed inside callbacks
     const queueRef = useRef([]);
     const currentIndexRef = useRef(0);
     const isShuffleRef = useRef(false);
     const repeatModeRef = useRef('off');
+    const ytPlayerRef = useRef(null);
+    const isYtRef = useRef(false);
 
     // Playback control lock for restricted sync room users
     const canChangeRef = useRef(true);
@@ -56,21 +58,17 @@ export const MusicProvider = ({ children }) => {
         }
     };
 
-
     const soundRef = useRef(null);
     const intervalRef = useRef(null);
     const analyserRef = useRef(null);
 
-    // Lazily initialize analyser to ensure it uses the EXACT same context as Howler
     const getAnalyser = () => {
         if (!analyserRef.current && Howler.ctx) {
             try {
-                // Ensure we use the global Howler context
                 const analyser = Howler.ctx.createAnalyser();
                 analyser.fftSize = 256;
                 analyserRef.current = analyser;
 
-                // Connect Howler's master output to our analyser
                 if (Howler.masterGain) {
                     Howler.masterGain.connect(analyser);
                 }
@@ -83,19 +81,27 @@ export const MusicProvider = ({ children }) => {
 
     const playSong = useCallback((song, songQueue = [], force = false) => {
         if (!force && !canChangeRef.current) return;
-        // RESUME AudioContext
-        if (Howler.ctx && Howler.ctx.state === 'suspended') {
-            Howler.ctx.resume();
-        }
 
-        // CROSSFADE: Fade out existing if it's playing
-        if (soundRef.current) {
+        const isYoutube = song._id?.toString().startsWith('yt_');
+        isYtRef.current = isYoutube;
+
+        // Clean up previous howler sound
+        if (soundRef.current && !isYoutube) {
             const oldSound = soundRef.current;
             oldSound.fade(oldSound.volume(), 0, 800);
             setTimeout(() => {
                 oldSound.stop();
                 oldSound.unload();
             }, 800);
+        } else if (soundRef.current && isYoutube) {
+            soundRef.current.stop();
+            soundRef.current.unload();
+            soundRef.current = null;
+        }
+
+        // Clean up or prepare Youtube player
+        if (!isYoutube && ytPlayerRef.current) {
+            ytPlayerRef.current.stopVideo();
         }
 
         if (songQueue.length > 0) {
@@ -108,78 +114,87 @@ export const MusicProvider = ({ children }) => {
         }
 
         setCurrentSong(song);
-
-        // Use html5: true for streaming (instant play)
-        // Note: For visualizer to work with html5: true, CORS must be perfect
-        const sound = new Howl({
-            src: [song.audioUrl],
-            html5: true,
-            preload: true,
-            format: ['mp3', 'wav', 'mpeg'],
-            crossOrigin: 'anonymous',
-            volume: 0,
-            onplay: () => {
-                setIsPlaying(true);
-                setIsLoading(false);
-                startTimer();
-
-                // Advanced: Connect HTML5 audio to Web Audio Context for Visualizer
-                /* 
-                const analyser = getAnalyser();
-                if (analyser && sound._sounds[0] && sound._sounds[0]._node) {
-                    try {
-                        const node = sound._sounds[0]._node;
-                        if (!node._source) {
-                            node._source = Howler.ctx.createMediaElementSource(node);
-                            node._source.connect(analyser);
-                            analyser.connect(Howler.ctx.destination);
-                        }
-                    } catch (e) {
-                        console.warn('VISUALIZER_STREAM_CONNECT_FAILED:', e);
-                    }
-                }
-                */
-            },
-            onload: () => {
-                setIsLoading(false);
-            },
-            onloaderror: (id, err) => {
-                console.error('AUDIO_LOAD_ERROR:', err);
-                setIsLoading(false);
-            },
-            onplayerror: (id, err) => {
-                console.error('AUDIO_PLAY_ERROR:', err);
-                setIsLoading(false);
-                sound.once('unlock', () => sound.play());
-            },
-            onpause: () => {
-                setIsPlaying(false);
-                stopTimer();
-            },
-            onend: () => {
-                handleSongEnd();
-            }
-        });
-
         setIsLoading(true);
-        soundRef.current = sound;
-        sound.play();
-        sound.fade(0, volume / 100, 400); // Faster fade in
+        setIsPlaying(true); // Optimistic UI update
 
-        // PRELOAD NEXT SONG:
-        if (songQueue.length > 0) {
-            const nextIdx = (currentIndex + 1) % songQueue.length;
-            const nextSong = songQueue[nextIdx];
-            if (nextSong) {
-                const preloader = new Image();
-                preloader.src = nextSong.coverUrl; // Preload cover
-                // Note: Howler handles its own internal preloading if we were to create a hidden Howl
+        if (isYoutube) {
+            if (Howler.ctx && Howler.ctx.state === 'running') {
+                Howler.ctx.suspend(); // Save CPU if possible
+            }
+            if (ytPlayerRef.current) {
+                const ytId = song._id.replace('yt_', '');
+                ytPlayerRef.current.loadVideoById(ytId);
+                ytPlayerRef.current.playVideo();
+                ytPlayerRef.current.setVolume(volume);
+                startTimer();
+            }
+        } else {
+            if (Howler.ctx && Howler.ctx.state === 'suspended') {
+                Howler.ctx.resume();
+            }
+
+            const sound = new Howl({
+                src: [song.audioUrl],
+                html5: true, // Crucial for streaming large files
+                preload: true,
+                format: ['mp3', 'wav', 'mpeg', 'webm', 'ogg'],
+                crossOrigin: 'anonymous',
+                volume: 0,
+                onplay: () => {
+                    setIsPlaying(true);
+                    setIsLoading(false);
+                    startTimer();
+                },
+                onload: () => {
+                    setIsLoading(false);
+                },
+                onloaderror: (id, err) => {
+                    console.error('AUDIO_LOAD_ERROR:', err);
+                    setIsLoading(false);
+                },
+                onplayerror: (id, err) => {
+                    console.error('AUDIO_PLAY_ERROR:', err);
+                    setIsLoading(false);
+                    sound.once('unlock', () => sound.play());
+                },
+                onpause: () => {
+                    setIsPlaying(false);
+                    stopTimer();
+                },
+                onend: () => {
+                    handleSongEnd();
+                }
+            });
+
+            soundRef.current = sound;
+            sound.play();
+            sound.fade(0, volume / 100, 400);
+
+            // Preload next cover image
+            if (songQueue.length > 0) {
+                const nextIdx = (currentIndex + 1) % songQueue.length;
+                const nextSong = songQueue[nextIdx];
+                if (nextSong) {
+                    const preloader = new Image();
+                    preloader.src = nextSong.coverUrl;
+                }
             }
         }
     }, [volume, currentIndex]);
 
     const togglePlay = useCallback((force = false) => {
         if (!force && !canChangeRef.current) return;
+
+        if (isYtRef.current && ytPlayerRef.current) {
+            const state = ytPlayerRef.current.getPlayerState();
+            if (state === 1) { // PLAYING
+                ytPlayerRef.current.pauseVideo();
+            } else {
+                ytPlayerRef.current.playVideo();
+            }
+            return;
+        }
+
         if (!soundRef.current) return;
         if (isPlaying) {
             soundRef.current.pause();
@@ -193,6 +208,13 @@ export const MusicProvider = ({ children }) => {
 
     const setPlaying = useCallback((shouldPlay, force = false) => {
         if (!force && !canChangeRef.current) return;
+
+        if (isYtRef.current && ytPlayerRef.current) {
+            if (shouldPlay) ytPlayerRef.current.playVideo();
+            else ytPlayerRef.current.pauseVideo();
+            return;
+        }
+
         if (!soundRef.current) return;
         if (shouldPlay && !isPlaying) {
             if (Howler.ctx && Howler.ctx.state === 'suspended') Howler.ctx.resume();
@@ -209,7 +231,16 @@ export const MusicProvider = ({ children }) => {
     const startTimer = () => {
         stopTimer();
         intervalRef.current = setInterval(() => {
-            if (soundRef.current && soundRef.current.playing()) {
+            if (isYtRef.current && ytPlayerRef.current) {
+                const state = ytPlayerRef.current.getPlayerState();
+                if (state === 1) { // 1 = playing
+                    const time = ytPlayerRef.current.getCurrentTime();
+                    const duration = ytPlayerRef.current.getDuration();
+                    if (duration > 0) {
+                        setProgress((time / duration) * 100);
+                    }
+                }
+            } else if (soundRef.current && soundRef.current.playing()) {
                 const current = soundRef.current.seek();
                 const duration = soundRef.current.duration();
                 if (duration > 0) {
@@ -221,6 +252,17 @@ export const MusicProvider = ({ children }) => {
 
     const seek = useCallback((value, isPercent = true, force = false) => {
         if (!force && !canChangeRef.current) return;
+
+        if (isYtRef.current && ytPlayerRef.current) {
+            const duration = ytPlayerRef.current.getDuration();
+            if (duration > 0) {
+                const targetTime = isPercent ? (value / 100) * duration : value;
+                ytPlayerRef.current.seekTo(targetTime, true);
+                setProgress(isPercent ? value : (targetTime / duration) * 100);
+            }
+            return;
+        }
+
         if (soundRef.current) {
             const duration = soundRef.current.duration();
             const targetTime = isPercent ? (value / 100) * duration : value;
@@ -235,7 +277,9 @@ export const MusicProvider = ({ children }) => {
 
     const changeVolume = (value) => {
         setVolume(value);
-        if (soundRef.current) {
+        if (isYtRef.current && ytPlayerRef.current) {
+            ytPlayerRef.current.setVolume(value);
+        } else if (soundRef.current) {
             soundRef.current.volume(value / 100);
         }
     };
@@ -277,7 +321,12 @@ export const MusicProvider = ({ children }) => {
         const shuffle = isShuffleRef.current;
 
         if (mode === 'one') {
-            soundRef.current.play();
+            if (isYtRef.current && ytPlayerRef.current) {
+                ytPlayerRef.current.seekTo(0);
+                ytPlayerRef.current.playVideo();
+            } else if (soundRef.current) {
+                soundRef.current.play();
+            }
         } else if (mode === 'all' || currentIdx < currentQueue.length - 1 || shuffle) {
             nextSong(true);
         } else {
@@ -290,11 +339,26 @@ export const MusicProvider = ({ children }) => {
         setIsShuffle(!isShuffle);
         isShuffleRef.current = !isShuffleRef.current;
     };
+
     const toggleRepeat = () => {
         const modes = ['off', 'one', 'all'];
         const nextMode = modes[(modes.indexOf(repeatMode) + 1) % modes.length];
         setRepeatMode(nextMode);
         repeatModeRef.current = nextMode;
+    };
+
+    const getCurrentTime = () => {
+        if (isYtRef.current && ytPlayerRef.current) {
+            return ytPlayerRef.current.getCurrentTime() || 0;
+        }
+        return soundRef.current?.seek() || 0;
+    };
+
+    const getDuration = () => {
+        if (isYtRef.current && ytPlayerRef.current) {
+            return ytPlayerRef.current.getDuration() || 0;
+        }
+        return soundRef.current?.duration() || 0;
     };
 
     return (
@@ -319,14 +383,56 @@ export const MusicProvider = ({ children }) => {
                 toggleRepeat,
                 isLiked,
                 toggleLike,
-                currentTime: soundRef.current?.seek() || 0,
-                duration: soundRef.current?.duration() || 0,
-                analyser: analyserRef.current, // Note: This will update when getAnalyser runs
+                currentTime: getCurrentTime(),
+                duration: getDuration(),
+                analyser: analyserRef.current,
                 setPlaybackLock
             }}
-
         >
             {children}
+            {/* Hidden YouTube Player embedded securely in DOM to stream audio securely using verified Youtube Iframe API natively without breaking API endpoints! 
+                Important note: To bypass backend timeouts, the best method always integrates playback directly into the frontend context block! */}
+            <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0" style={{ zIndex: -9999 }}>
+                <YouTube
+                    videoId="" // will be loaded via ref
+                    opts={{
+                        height: '100',
+                        width: '100',
+                        playerVars: {
+                            autoplay: 0,
+                            controls: 0,
+                            disablekb: 1,
+                            fs: 0,
+                            rel: 0,
+                            modestbranding: 1
+                        },
+                    }}
+                    onReady={(event) => {
+                        ytPlayerRef.current = event.target;
+                        ytPlayerRef.current.setVolume(volume);
+                    }}
+                    onStateChange={(event) => {
+                        const YTState = { ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3 };
+                        if (event.data === YTState.PLAYING) {
+                            setIsPlaying(true);
+                            setIsLoading(false);
+                            startTimer();
+                        } else if (event.data === YTState.PAUSED) {
+                            setIsPlaying(false);
+                            stopTimer();
+                        } else if (event.data === YTState.ENDED) {
+                            handleSongEnd();
+                        } else if (event.data === YTState.BUFFERING) {
+                            setIsLoading(true);
+                        }
+                    }}
+                    onError={(e) => {
+                        console.error('YOUTUBE_PLAYER_ERROR', e);
+                        setIsLoading(false);
+                        nextSong(true);
+                    }}
+                />
+            </div>
         </MusicContext.Provider>
     );
 };

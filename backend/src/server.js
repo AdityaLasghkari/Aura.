@@ -17,6 +17,7 @@ import playlistRoutes from './routes/playlistRoutes.js';
 import historyRoutes from './routes/historyRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import artistRoutes from './routes/artistRoutes.js';
+import youtubeRoutes from './routes/youtubeRoutes.js';
 import socketHandler from './utils/socketHandler.js';
 
 dotenv.config();
@@ -96,6 +97,7 @@ app.use('/api/playlists', playlistRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/artists', artistRoutes);
+app.use('/api/youtube', youtubeRoutes);
 
 // Google Drive Auth Routes
 app.get('/auth/google', async (req, res) => {
