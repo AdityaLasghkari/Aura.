@@ -398,13 +398,17 @@ export const MusicProvider = ({ children }) => {
                     opts={{
                         height: '100',
                         width: '100',
+                        host: 'https://www.youtube-nocookie.com',
                         playerVars: {
                             autoplay: 0,
                             controls: 0,
                             disablekb: 1,
                             fs: 0,
                             rel: 0,
-                            modestbranding: 1
+                            modestbranding: 1,
+                            enablejsapi: 1,
+                            origin: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
+                            widget_referrer: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
                         },
                     }}
                     onReady={(event) => {
