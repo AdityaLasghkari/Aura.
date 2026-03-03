@@ -398,7 +398,7 @@ export const MusicProvider = ({ children }) => {
             <div
                 className={
                     isVideoMode && isYtRef.current
-                        ? "fixed top-0 left-0 w-full h-[calc(100vh-160px)] z-[65] bg-black transition-all duration-500"
+                        ? "fixed top-0 left-0 w-full h-[calc(100vh-160px)] z-[65] bg-black transition-all duration-500 overflow-hidden flex items-center justify-center pointer-events-none"
                         : "fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0"
                 }
                 style={!isVideoMode ? { zIndex: -9999 } : {}}
@@ -445,8 +445,11 @@ export const MusicProvider = ({ children }) => {
                         setIsLoading(false);
                         nextSong(true);
                     }}
-                    className="w-full h-full"
+                    className="w-full h-[140%] translate-y-[-10%] scale-[1.2] pointer-events-none select-none"
                 />
+
+                {/* Physical overlay to brutally cover any remaining watermark at the bottom right */}
+                <div className="absolute right-0 bottom-0 w-32 h-16 bg-black z-[70] pointer-events-none"></div>
             </div>
         </MusicContext.Provider>
     );

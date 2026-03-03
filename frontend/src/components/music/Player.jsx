@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, Maximize2, Repeat, Shuffle, MonitorPlay } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Player = () => {
     const {
@@ -24,6 +24,7 @@ const Player = () => {
     } = useMusic();
 
     const location = useLocation();
+    const navigate = useNavigate();
 
     if (!currentSong) return null;
 
@@ -135,7 +136,10 @@ const Player = () => {
 
                     <div className="flex items-center space-x-6">
                         <button
-                            onClick={toggleVideoMode}
+                            onClick={() => {
+                                toggleVideoMode();
+                                navigate('/player');
+                            }}
                             className={`transition-colors flex items-center justify-center hover:scale-110 ${isVideoMode ? 'text-black font-bold' : 'text-gray-400 hover:text-black'}`}
                             title="Toggle Video Mode"
                         >

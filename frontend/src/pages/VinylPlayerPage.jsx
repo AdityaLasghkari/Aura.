@@ -53,9 +53,10 @@ const VinylPlayerPage = () => {
                 <div className="absolute top-8 left-8 z-[70]">
                     <button
                         onClick={toggleVideoMode}
-                        className="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                        className="px-6 py-3 flex items-center justify-center space-x-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all border border-white/10 hover:border-white/30 group"
                     >
-                        <ChevronDown className="w-6 h-6 rotate-90" />
+                        <ChevronDown className="w-5 h-5 rotate-90 group-hover:-translate-x-1 transition-transform" />
+                        <span className="font-bold text-[10px] tracking-[0.2em] uppercase">Audio</span>
                     </button>
                 </div>
 
