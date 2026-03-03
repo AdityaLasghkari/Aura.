@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipForward, SkipBack, Volume2, Maximize2, Repeat, Shuffle } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, Maximize2, Repeat, Shuffle, MonitorPlay } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -18,7 +18,9 @@ const Player = () => {
         isShuffle,
         toggleShuffle,
         repeatMode,
-        toggleRepeat
+        toggleRepeat,
+        isVideoMode,
+        toggleVideoMode
     } = useMusic();
 
     const location = useLocation();
@@ -131,9 +133,19 @@ const Player = () => {
                         </div>
                     </div>
 
-                    <Link to="/player" className="text-gray-400 hover:text-black transition-colors">
-                        <Maximize2 size={16} />
-                    </Link>
+                    <div className="flex items-center space-x-6">
+                        <button
+                            onClick={toggleVideoMode}
+                            className={`transition-colors flex items-center justify-center hover:scale-110 ${isVideoMode ? 'text-black font-bold' : 'text-gray-400 hover:text-black'}`}
+                            title="Toggle Video Mode"
+                        >
+                            <MonitorPlay size={18} strokeWidth={1.5} />
+                        </button>
+
+                        <Link to="/player" className="text-gray-400 hover:text-black transition-colors hover:scale-110 flex items-center justify-center">
+                            <Maximize2 size={18} strokeWidth={1.5} />
+                        </Link>
+                    </div>
                 </div>
             </div>
             {/* Mobile Progress Bar - Minimalist slim line at top of player */}
