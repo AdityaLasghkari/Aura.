@@ -10,8 +10,10 @@ const SearchOverlay = ({ isOpen, onClose }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState({ songs: [], artists: [] });
     const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
     const debouncedSearch = useDebounce(searchTerm, 400);
     const inputRef = useRef(null);
+    const itemsPerPage = 15;
     const { playSong } = useMusic();
 
     // Mouse position for cursor trail
@@ -40,6 +42,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
             }
 
             setLoading(true);
+            setCurrentPage(1);
             try {
                 // Fetch artists and youtube results in parallel
                 // User requested search output to be exclusively from YouTube to ensure full catalog access
@@ -94,6 +97,12 @@ const SearchOverlay = ({ isOpen, onClose }) => {
         results.artists.forEach((a) => items.push({ ...a, itemType: 'artist', title: a.name, subtitle: a.role || 'Sonic Architect', image: a.photoUrl || a.avatar }));
         return items;
     }, [results]);
+
+    const totalPages = Math.ceil(allResults.length / itemsPerPage);
+    const paginatedResults = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return allResults.slice(start, start + itemsPerPage);
+    }, [allResults, currentPage, itemsPerPage]);
 
     return (
         <AnimatePresence>
@@ -151,8 +160,8 @@ const SearchOverlay = ({ isOpen, onClose }) => {
 
 
                                 {/* Results Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-12 pb-32">
-                                    {allResults.map((item, index) => (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-12 pb-12">
+                                    {paginatedResults.map((item, index) => (
                                         <motion.div
                                             key={item._id}
                                             initial={{ opacity: 0, y: 20 }}
@@ -176,7 +185,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                                         {item.title || item.name}
                                                     </h3>
                                                     <span className="text-[9px] font-bold uppercase tracking-widest opacity-40 shrink-0">
-                                                        {(index + 1).toString().padStart(2, '0')}
+                                                        {(((currentPage - 1) * itemsPerPage) + index + 1).toString().padStart(2, '0')}
                                                     </span>
                                                 </div>
                                                 <p className="text-[9px] uppercase tracking-widest opacity-50 font-bold">
@@ -193,6 +202,39 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-4 pb-20 w-full z-20">
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            className="w-10 h-10 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center opacity-50 hover:opacity-100 disabled:opacity-20 transition-opacity"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">chevron_left</span>
+                                        </button>
+
+                                        <div className="flex gap-2 font-serif italic">
+                                            {Array.from({ length: totalPages }).map((_, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setCurrentPage(i + 1)}
+                                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${currentPage === i + 1 ? 'bg-slate-900 text-white dark:bg-white dark:text-black scale-110' : 'opacity-50 hover:opacity-100'}`}
+                                                >
+                                                    {i + 1}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="w-10 h-10 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center opacity-50 hover:opacity-100 disabled:opacity-20 transition-opacity"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">chevron_right</span>
+                                        </button>
+                                    </div>
+                                )}
 
                                 {!searchTerm && (
                                     <div className="flex flex-col items-center justify-center py-20 text-center opacity-[0.03] select-none">

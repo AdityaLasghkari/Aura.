@@ -18,8 +18,8 @@ export const searchYouTube = async (req, res) => {
         }
 
         const r = await ytSearch(searchQuery);
-        // Filter out very long videos (over 15 minutes) and limit to 15 results
-        const videos = r.videos.filter(v => v.seconds < 900).slice(0, 15);
+        // Filter out very long videos (over 15 minutes) and limit to up to 80 results to support pagination
+        const videos = r.videos.filter(v => v.seconds < 900).slice(0, 80);
 
         const formattedResults = videos.map(v => ({
             _id: `yt_${v.videoId}`,
