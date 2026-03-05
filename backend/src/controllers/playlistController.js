@@ -3,7 +3,7 @@ import Song from '../models/Song.js';
 import { uploadToGoogleDrive, deleteFromGoogleDrive } from '../utils/uploadHelper.js';
 import { normalizeSongs, normalizeCoverUrl } from '../utils/coverUrlHelper.js';
 import jwt from 'jsonwebtoken';
-import ytSearch from 'yt-search';
+import { fetchFullYouTubePlaylist } from '../utils/youtubePlaylist.js';
 
 // @desc    Create a new playlist
 // @route   POST /api/playlists
@@ -61,15 +61,16 @@ export const importYoutubePlaylist = async (req, res) => {
     }
 
     try {
-        const ytPlaylist = await ytSearch({ listId });
+        const ytPlaylist = await fetchFullYouTubePlaylist(listId);
 
-        if (!ytPlaylist || !ytPlaylist.videos) {
+        if (!ytPlaylist || !ytPlaylist.videos || ytPlaylist.videos.length === 0) {
             return res.status(404).json({ message: 'Playlist not found on YouTube' });
         }
 
+        console.log(`Importing ${ytPlaylist.videos.length} videos from "${ytPlaylist.title}"`);
+
         const songIds = [];
 
-        // Loop through videos and create/find songs
         for (const video of ytPlaylist.videos) {
             const ytAudioUrl = `yt_${video.videoId}`;
 
@@ -79,17 +80,17 @@ export const importYoutubePlaylist = async (req, res) => {
                 try {
                     song = await Song.create({
                         title: video.title || 'Unknown Title',
-                        artist: video.author.name || 'Unknown Artist',
+                        artist: video.author || 'Unknown Artist',
                         audioUrl: ytAudioUrl,
                         coverUrl: video.thumbnail,
-                        duration: video.duration.seconds || 0,
+                        duration: video.lengthSeconds || 0,
                         genre: 'Other',
                         uploadedBy: req.user._id,
                         isActive: true
                     });
                 } catch (songErr) {
                     console.error('Error saving YT song details:', songErr);
-                    continue; // Skip invalid songs
+                    continue;
                 }
             }
             songIds.push(song._id);
@@ -99,10 +100,10 @@ export const importYoutubePlaylist = async (req, res) => {
 
         const playlist = await Playlist.create({
             name: ytPlaylist.title || 'YouTube Import',
-            description: 'Imported from YouTube',
+            description: `Imported from YouTube · ${ytPlaylist.videos.length} tracks`,
             isPublic: true,
             userId: req.user._id,
-            coverUrl: ytPlaylist.image || ytPlaylist.thumbnail || (ytPlaylist.videos[0]?.thumbnail),
+            coverUrl: ytPlaylist.image || ytPlaylist.videos[0]?.thumbnail,
             shareCode,
             songs: songIds
         });
@@ -137,12 +138,12 @@ export const addYoutubeToPlaylist = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized to edit this playlist' });
         }
 
-        const ytPlaylist = await ytSearch({ listId });
-        if (!ytPlaylist || !ytPlaylist.videos) {
+        const ytPlaylist = await fetchFullYouTubePlaylist(listId);
+        if (!ytPlaylist || !ytPlaylist.videos || ytPlaylist.videos.length === 0) {
             return res.status(404).json({ message: 'Playlist not found on YouTube' });
         }
 
-        const songIds = [];
+        console.log(`Appending ${ytPlaylist.videos.length} videos from "${ytPlaylist.title}"`);
 
         for (const video of ytPlaylist.videos) {
             const ytAudioUrl = `yt_${video.videoId}`;
@@ -152,10 +153,10 @@ export const addYoutubeToPlaylist = async (req, res) => {
                 try {
                     song = await Song.create({
                         title: video.title || 'Unknown Title',
-                        artist: video.author.name || 'Unknown Artist',
+                        artist: video.author || 'Unknown Artist',
                         audioUrl: ytAudioUrl,
                         coverUrl: video.thumbnail,
-                        duration: video.duration.seconds || 0,
+                        duration: video.lengthSeconds || 0,
                         genre: 'Other',
                         uploadedBy: req.user._id,
                         isActive: true
