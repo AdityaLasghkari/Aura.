@@ -24,30 +24,69 @@ const QueuePanel = ({ isOpen, onClose }) => {
             setLoadingLyrics(true);
             setLyrics(null);
             try {
-                // Strip out features like (feat. X) from title to improve search hits
-                let searchTitle = currentSong.title.replace(/\([^)]*\)/g, '').trim();
-                let searchArtist = currentSong.artist;
+                // Clean up title for better search results
+                const rawTitle = currentSong.title || '';
+                const rawArtist = currentSong.artist || '';
 
-                const res = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(searchTitle)}&artist_name=${encodeURIComponent(searchArtist)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.length > 0 && (data[0].syncedLyrics || data[0].plainLyrics)) {
-                        setLyrics(data[0].syncedLyrics || data[0].plainLyrics);
-                    } else {
-                        setLyrics("LYRICS NOT AVAILABLE");
-                    }
-                } else {
+                // Remove common suffixes like (Official Video), [Lyrics], (feat. X), etc.
+                const cleanTitle = rawTitle
+                    .replace(/\s*[\(\[][^\)\]]*(?:official|video|audio|lyric|feat|ft\.|remix|version|hd|hq|mv|music\s*video)[\)\]]/gi, '')
+                    .replace(/\s*\|.*$/g, '')
+                    .replace(/\s*-\s*$/, '')
+                    .trim();
+
+                // Also try a very minimal title (first part before dash or pipe)
+                const minimalTitle = rawTitle.split(/[-|]/)[0].trim();
+
+                // Strategy 1: Clean title + artist
+                let found = await tryLrcLib(cleanTitle, rawArtist);
+
+                // Strategy 2: Raw title + artist  
+                if (!found) found = await tryLrcLib(rawTitle, rawArtist);
+
+                // Strategy 3: Clean title only (no artist)
+                if (!found) found = await tryLrcLib(cleanTitle, '');
+
+                // Strategy 4: Minimal title + artist
+                if (!found && minimalTitle !== cleanTitle) found = await tryLrcLib(minimalTitle, rawArtist);
+
+                // Strategy 5: Minimal title only
+                if (!found && minimalTitle !== cleanTitle) found = await tryLrcLib(minimalTitle, '');
+
+                if (!found) {
                     setLyrics("LYRICS NOT AVAILABLE");
                 }
             } catch (error) {
+                console.error('Lyrics fetch error:', error);
                 setLyrics("LYRICS NOT AVAILABLE");
             } finally {
                 setLoadingLyrics(false);
             }
         };
 
+        const tryLrcLib = async (title, artist) => {
+            try {
+                let url = `https://lrclib.net/api/search?track_name=${encodeURIComponent(title)}`;
+                if (artist) url += `&artist_name=${encodeURIComponent(artist)}`;
+
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        // Prefer synced lyrics, fallback to plain
+                        const best = data.find(d => d.syncedLyrics) || data.find(d => d.plainLyrics);
+                        if (best) {
+                            setLyrics(best.syncedLyrics || best.plainLyrics);
+                            return true;
+                        }
+                    }
+                }
+            } catch (e) { /* ignore, try next strategy */ }
+            return false;
+        };
+
         fetchLyrics();
-    }, [currentSong]);
+    }, [currentSong?._id, currentSong?.title]);
 
     return (
         <AnimatePresence>
