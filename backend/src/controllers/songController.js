@@ -4,6 +4,7 @@ import Artist from '../models/Artist.js';
 import { uploadToGoogleDrive, deleteFromGoogleDrive } from '../utils/uploadHelper.js';
 import { drive, loadCredentials } from '../config/googleDrive.js';
 import { normalizeSong, normalizeSongs } from '../utils/coverUrlHelper.js';
+import axios from 'axios';
 
 // @desc    Get all songs (paginated)
 // @route   GET /api/songs
@@ -264,10 +265,15 @@ export const getGoogleDriveStream = async (req, res) => {
 
         // ── 2. Fallback: ask Drive API (only if not in DB) ───────────────────
         if (!size || !mimeType) {
-            loadCredentials();
-            const meta = await drive.files.get({ fileId, fields: 'size,mimeType' });
-            size = parseInt(meta.data.size) || undefined;
-            mimeType = meta.data.mimeType || 'application/octet-stream';
+            try {
+                loadCredentials();
+                const meta = await drive.files.get({ fileId, fields: 'size,mimeType' });
+                size = parseInt(meta.data.size) || undefined;
+                mimeType = meta.data.mimeType || 'application/octet-stream';
+            } catch (metaErr) {
+                console.error('META_DRIVE_OAUTH_FAILED:', metaErr.message);
+                // Can't get size, skip ranges
+            }
         }
 
         res.setHeader('Content-Type', mimeType || 'application/octet-stream');
@@ -301,16 +307,28 @@ export const getGoogleDriveStream = async (req, res) => {
                 'Content-Type': mimeType,
             });
 
-            loadCredentials();
-            const driveRes = await drive.files.get(
-                { fileId, alt: 'media' },
-                {
+            let streamData;
+            try {
+                loadCredentials();
+                const driveRes = await drive.files.get(
+                    { fileId, alt: 'media' },
+                    {
+                        responseType: 'stream',
+                        headers: { Range: `bytes=${start}-${end}` }
+                    }
+                );
+                streamData = driveRes.data;
+            } catch (err) {
+                console.error('RANGE_STREAM_OAUTH_FAILED (fallback to axios):', err.message);
+                const axiosHeaders = { Range: `bytes=${start}-${end}` };
+                const axiosRes = await axios.get(`https://drive.google.com/uc?export=download&id=${fileId}`, {
                     responseType: 'stream',
-                    headers: { Range: `bytes=${start}-${end}` }
-                }
-            );
+                    headers: axiosHeaders
+                });
+                streamData = axiosRes.data;
+            }
 
-            driveRes.data
+            streamData
                 .on('error', (err) => {
                     console.error('RANGE_STREAM_ERROR:', err.message);
                     if (!res.headersSent) res.status(500).end();
@@ -318,8 +336,8 @@ export const getGoogleDriveStream = async (req, res) => {
                 .pipe(res);
 
             req.on('close', () => {
-                if (driveRes.data && typeof driveRes.data.destroy === 'function') {
-                    driveRes.data.destroy();
+                if (streamData && typeof streamData.destroy === 'function') {
+                    streamData.destroy();
                 }
             });
 
@@ -332,13 +350,21 @@ export const getGoogleDriveStream = async (req, res) => {
             res.setHeader('Accept-Ranges', 'bytes');
         }
 
-        loadCredentials();
-        const driveRes = await drive.files.get(
-            { fileId, alt: 'media' },
-            { responseType: 'stream' }
-        );
+        let streamData;
+        try {
+            loadCredentials();
+            const driveRes = await drive.files.get(
+                { fileId, alt: 'media' },
+                { responseType: 'stream' }
+            );
+            streamData = driveRes.data;
+        } catch (err) {
+            console.error('FULL_STREAM_OAUTH_FAILED (fallback to axios):', err.message);
+            const axiosRes = await axios.get(`https://drive.google.com/uc?export=download&id=${fileId}`, { responseType: 'stream' });
+            streamData = axiosRes.data;
+        }
 
-        driveRes.data
+        streamData
             .on('error', (err) => {
                 console.error('STREAM_PROXY_ERROR:', err.message);
                 if (!res.headersSent) res.status(500).end();
@@ -393,13 +419,21 @@ export const getImageProxy = async (req, res) => {
 
         res.setHeader('Content-Type', mimeType);
 
-        loadCredentials();
-        const driveRes = await drive.files.get(
-            { fileId, alt: 'media' },
-            { responseType: 'stream' }
-        );
+        let streamData;
+        try {
+            loadCredentials();
+            const driveRes = await drive.files.get(
+                { fileId, alt: 'media' },
+                { responseType: 'stream' }
+            );
+            streamData = driveRes.data;
+        } catch (err) {
+            console.error('IMAGE_PROXY_OAUTH_FAILED (fallback to axios):', err.message);
+            const axiosRes = await axios.get(`https://drive.google.com/uc?export=view&id=${fileId}`, { responseType: 'stream' });
+            streamData = axiosRes.data;
+        }
 
-        driveRes.data
+        streamData
             .on('error', (err) => {
                 console.error('IMAGE_PROXY_ERROR:', err.message);
                 if (!res.headersSent) res.status(500).end();
