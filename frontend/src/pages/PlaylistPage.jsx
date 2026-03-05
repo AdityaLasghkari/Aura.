@@ -41,7 +41,7 @@ const PlaylistPage = () => {
 
         if (currentUser?._id !== playlist?.userId?._id) return;
 
-        const ytRegex = /[?&]list=([^#\&\?]*)/;
+        const ytRegex = /[?&]list=([a-zA-Z0-9_-]+)/;
         const match = val.match(ytRegex);
 
         if (match && match[1]) {

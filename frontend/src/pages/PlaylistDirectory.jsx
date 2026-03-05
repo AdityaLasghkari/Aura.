@@ -46,8 +46,8 @@ const PlaylistDirectory = () => {
         const val = e.target.value;
         setSearchTerm(val);
 
-        // Check if the pasted string is a youtube playlist link
-        const ytRegex = /[?&]list=([^#\&\?]*)/;
+        // Check if the pasted string is a youtube or youtube music playlist link
+        const ytRegex = /[?&]list=([a-zA-Z0-9_-]+)/;
         const match = val.match(ytRegex);
 
         if (match && match[1]) {
