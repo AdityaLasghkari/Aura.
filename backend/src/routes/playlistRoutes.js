@@ -8,6 +8,7 @@ import {
     deletePlaylist,
     getPublicPlaylists,
     importYoutubePlaylist,
+    addYoutubeToPlaylist,
 } from '../controllers/playlistController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -22,6 +23,7 @@ router.get('/user/:userId', protect, getUserPlaylists);
 router.get('/:id', getPlaylistById);
 router.put('/:id', protect, addSongToPlaylist); // Note: Simple add song, prompt specifies PUT for update, but here we use it for adding.
 router.post('/:id/songs', protect, addSongToPlaylist);
+router.post('/:id/add-youtube', protect, addYoutubeToPlaylist);
 router.delete('/:id/songs/:songId', protect, removeSongFromPlaylist);
 router.delete('/:id', protect, deletePlaylist);
 

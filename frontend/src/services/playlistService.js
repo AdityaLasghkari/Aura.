@@ -40,6 +40,11 @@ const playlistService = {
     importYoutube: async (listId) => {
         const response = await api.post('/playlists/import-youtube', { listId });
         return response.data;
+    },
+
+    appendYoutube: async (id, listId) => {
+        const response = await api.post(`/playlists/${id}/add-youtube`, { listId });
+        return response.data;
     }
 };
 

@@ -119,6 +119,76 @@ export const importYoutubePlaylist = async (req, res) => {
     }
 };
 
+// @desc    Append YouTube Playlist to existing Playlist
+// @route   POST /api/playlists/:id/add-youtube
+// @access  Private
+export const addYoutubeToPlaylist = async (req, res) => {
+    const { listId } = req.body;
+
+    if (!listId) {
+        return res.status(400).json({ message: 'YouTube Playlist ID is required' });
+    }
+
+    try {
+        const playlist = await Playlist.findById(req.params.id);
+        if (!playlist) return res.status(404).json({ message: 'Playlist not found' });
+
+        if (playlist.userId.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized to edit this playlist' });
+        }
+
+        const ytPlaylist = await ytSearch({ listId });
+        if (!ytPlaylist || !ytPlaylist.videos) {
+            return res.status(404).json({ message: 'Playlist not found on YouTube' });
+        }
+
+        const songIds = [];
+
+        for (const video of ytPlaylist.videos) {
+            const ytAudioUrl = `yt_${video.videoId}`;
+            let song = await Song.findOne({ audioUrl: ytAudioUrl });
+
+            if (!song) {
+                try {
+                    song = await Song.create({
+                        title: video.title || 'Unknown Title',
+                        artist: video.author.name || 'Unknown Artist',
+                        audioUrl: ytAudioUrl,
+                        coverUrl: video.thumbnail,
+                        duration: video.duration.seconds || 0,
+                        genre: 'Other',
+                        uploadedBy: req.user._id,
+                        isActive: true
+                    });
+                } catch (songErr) {
+                    console.error('Error saving YT song details:', songErr);
+                    continue;
+                }
+            }
+            if (!playlist.songs.includes(song._id)) {
+                playlist.songs.push(song._id);
+            }
+        }
+
+        // Only set cover art if the existing playlist doesn't have one
+        if (!playlist.coverUrl && ytPlaylist.videos[0]?.thumbnail) {
+            playlist.coverUrl = ytPlaylist.videos[0].thumbnail;
+        }
+
+        await playlist.save();
+
+        res.json({
+            success: true,
+            message: 'YouTube Playlist appended successfully',
+            data: { playlist },
+        });
+
+    } catch (error) {
+        console.error('YT_APPEND_ERR:', error);
+        res.status(500).json({ message: 'Error appending YouTube Playlist' });
+    }
+};
+
 
 // @desc    Get user's playlists
 // @route   GET /api/playlists/user/:userId

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, ListPlus, X, ChevronDown } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
@@ -13,6 +13,41 @@ const QueuePanel = ({ isOpen, onClose }) => {
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
+
+    const [lyrics, setLyrics] = useState(null);
+    const [loadingLyrics, setLoadingLyrics] = useState(false);
+
+    useEffect(() => {
+        if (!currentSong) return;
+
+        const fetchLyrics = async () => {
+            setLoadingLyrics(true);
+            setLyrics(null);
+            try {
+                // Strip out features like (feat. X) from title to improve search hits
+                let searchTitle = currentSong.title.replace(/\([^)]*\)/g, '').trim();
+                let searchArtist = currentSong.artist;
+
+                const res = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(searchTitle)}&artist_name=${encodeURIComponent(searchArtist)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.length > 0 && (data[0].syncedLyrics || data[0].plainLyrics)) {
+                        setLyrics(data[0].syncedLyrics || data[0].plainLyrics);
+                    } else {
+                        setLyrics("LYRICS NOT AVAILABLE");
+                    }
+                } else {
+                    setLyrics("LYRICS NOT AVAILABLE");
+                }
+            } catch (error) {
+                setLyrics("LYRICS NOT AVAILABLE");
+            } finally {
+                setLoadingLyrics(false);
+            }
+        };
+
+        fetchLyrics();
+    }, [currentSong]);
 
     return (
         <AnimatePresence>
@@ -125,8 +160,29 @@ const QueuePanel = ({ isOpen, onClose }) => {
                         )}
 
                         {activeTab === 'lyrics' && (
-                            <div className="flex items-center justify-center h-full text-gray-500 text-sm tracking-widest">
-                                LYRICS NOT AVAILABLE
+                            <div className="h-full w-full max-w-3xl mx-auto py-8">
+                                {loadingLyrics ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-gray-500 text-[10px] tracking-[0.4em] uppercase space-y-4 py-20">
+                                        <div className="w-8 h-8 border-2 border-border border-t-foreground rounded-full animate-spin" />
+                                        <span>SEARCHING ARCHIVES...</span>
+                                    </div>
+                                ) : lyrics && lyrics !== "LYRICS NOT AVAILABLE" ? (
+                                    <div className="space-y-6 text-center md:text-left text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif leading-relaxed text-gray-400">
+                                        {lyrics.split('\n').map((line, i) => {
+                                            // Optional: strip out LRC timestamps if present
+                                            const cleanLine = line.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
+                                            return (
+                                                <p key={i} className={cleanLine ? "hover:text-foreground transition-colors cursor-default" : "h-8"}>
+                                                    {cleanLine}
+                                                </p>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center h-full text-gray-500 text-sm tracking-widest uppercase py-20">
+                                        LYRICS NOT AVAILABLE
+                                    </div>
+                                )}
                             </div>
                         )}
 

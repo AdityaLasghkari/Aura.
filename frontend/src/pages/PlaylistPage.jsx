@@ -15,22 +15,53 @@ const PlaylistPage = () => {
     const { playSong } = useMusic();
     const [playlist, setPlaylist] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isImporting, setIsImporting] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchPlaylist = async () => {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const res = await playlistService.getPlaylistById(id, code);
+            setPlaylist(res.data?.playlist || res);
+        } catch (error) {
+            toast.error('FAILED TO LOAD PLAYLIST');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchPlaylist = async () => {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const code = urlParams.get('code');
-                const res = await playlistService.getPlaylistById(id, code);
-                setPlaylist(res.data?.playlist || res);
-            } catch (error) {
-                toast.error('FAILED TO LOAD PLAYLIST');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchPlaylist();
     }, [id]);
+
+    const handleSearchChange = async (e) => {
+        const val = e.target.value;
+        setSearchTerm(val);
+
+        if (currentUser?._id !== playlist?.userId?._id) return;
+
+        const ytRegex = /[?&]list=([^#\&\?]*)/;
+        const match = val.match(ytRegex);
+
+        if (match && match[1]) {
+            const listId = match[1];
+            setSearchTerm('');
+            setIsImporting(true);
+            const loadingToast = toast.loading('IMPORTING YOUTUBE PLAYLIST...');
+
+            try {
+                await playlistService.appendYoutube(id, listId);
+                toast.success('YOUTUBE PLAYLIST ADDED', { id: loadingToast });
+                await fetchPlaylist(); // Refresh data
+            } catch (error) {
+                console.error(error);
+                toast.error('FAILED TO IMPORT YOUTUBE PLAYLIST', { id: loadingToast });
+            } finally {
+                setIsImporting(false);
+            }
+        }
+    };
 
     const handleDeletePlaylist = async () => {
         if (window.confirm('Are you sure you want to delete this playlist?')) {
@@ -72,6 +103,12 @@ const PlaylistPage = () => {
 
     const displayCoverUrl = playlist.coverUrl || (playlist.songs && playlist.songs.length > 0 ? playlist.songs[0].coverUrl : null);
 
+    const nameLength = playlist.name?.length || 0;
+    const titleSize = nameLength > 25 ? 'text-3xl md:text-5xl lg:text-6xl' :
+        nameLength > 15 ? 'text-4xl md:text-6xl lg:text-8xl' :
+            nameLength > 8 ? 'text-5xl md:text-8xl lg:text-[10rem]' :
+                'text-6xl md:text-9xl lg:text-[14rem]';
+
     return (
         <div className="min-h-screen pt-32 pb-32 bg-background text-foreground">
             {/* Minimalist Header */}
@@ -97,7 +134,7 @@ const PlaylistPage = () => {
 
                     <div className="space-y-6 w-full max-w-6xl mx-auto px-4">
                         <span className="label-text text-foreground tracking-[0.6em] block">PLAYLIST COLLECTION</span>
-                        <h1 className="serif-display text-outline text-5xl md:text-9xl lg:text-[14rem] leading-[0.8] tracking-tighter uppercase break-words px-4">
+                        <h1 className={`serif-display text-outline ${titleSize} leading-[0.8] tracking-tighter uppercase break-words px-4`}>
                             {playlist.name}
                         </h1>
                         {!playlist.isPublic && playlist.shareCode && (
@@ -165,10 +202,26 @@ const PlaylistPage = () => {
 
             {/* Navigation Tabs (Single Tab for Tracklist) */}
             <div className="px-6 md:px-12 lg:px-24 mb-16 sticky top-20 bg-background/90 backdrop-blur-xl z-30 py-6 border-b border-border">
-                <div className="max-w-[1920px] mx-auto flex space-x-12">
-                    <button className="text-[11px] tracking-[0.4em] uppercase transition-all text-foreground font-bold border-b-2 border-foreground pb-2">
-                        TRACKLIST ({playlist.songs?.length || 0})
-                    </button>
+                <div className="max-w-[1920px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                    <div className="flex space-x-12">
+                        <button className="text-[11px] tracking-[0.4em] uppercase transition-all text-foreground font-bold border-b-2 border-foreground pb-2">
+                            TRACKLIST ({playlist.songs?.length || 0})
+                        </button>
+                    </div>
+
+                    {/* YouTube Playlist Add Search Bar */}
+                    {currentUser?._id === playlist.userId?._id && (
+                        <div className="relative w-full sm:w-80">
+                            <input
+                                type="text"
+                                placeholder="PASTE YOUTUBE PLAYLIST URL..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                disabled={isImporting}
+                                className="w-full bg-transparent border-b border-border py-2 text-[10px] tracking-widest uppercase focus:outline-none focus:border-foreground transition-colors disabled:opacity-50 text-foreground"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
