@@ -41,3 +41,46 @@ export const searchYouTube = async (req, res) => {
         res.status(500).json({ message: 'Error searching YouTube' });
     }
 };
+
+// @desc    Get YouTube playlist videos
+// @route   GET /api/youtube/playlist?listId=id
+// @access  Public
+export const getYouTubePlaylist = async (req, res) => {
+    const listId = req.query.listId;
+
+    if (!listId) {
+        return res.status(400).json({ message: 'Playlist ID is required' });
+    }
+
+    try {
+        const playlist = await ytSearch({ listId });
+
+        if (!playlist || !playlist.videos) {
+            return res.status(404).json({ message: 'Playlist not found' });
+        }
+
+        const formattedResults = playlist.videos.map(v => ({
+            _id: `yt_${v.videoId}`,
+            title: v.title,
+            artist: v.author.name,
+            coverUrl: v.thumbnail,
+            duration: v.duration.seconds,
+            formattedDuration: v.duration.timestamp,
+            audioUrl: '',
+            itemType: 'song',
+            isYoutube: true
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                name: playlist.title,
+                songs: formattedResults,
+                coverUrl: playlist.image || playlist.thumbnail || formattedResults[0]?.coverUrl
+            }
+        });
+    } catch (error) {
+        console.error('YOUTUBE_PLAYLIST_ERROR:', error);
+        res.status(500).json({ message: 'Error fetching YouTube playlist' });
+    }
+};

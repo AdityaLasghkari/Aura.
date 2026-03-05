@@ -83,7 +83,7 @@ export const MusicProvider = ({ children }) => {
     const playSong = useCallback((song, songQueue = [], force = false) => {
         if (!force && !canChangeRef.current) return;
 
-        const isYoutube = song._id?.toString().startsWith('yt_');
+        const isYoutube = song._id?.toString().startsWith('yt_') || song.audioUrl?.toString().startsWith('yt_') || song.isYoutube;
         isYtRef.current = isYoutube;
 
         // Clean up previous howler sound
@@ -123,7 +123,9 @@ export const MusicProvider = ({ children }) => {
                 Howler.ctx.suspend(); // Save CPU if possible
             }
             if (ytPlayerRef.current) {
-                const ytId = song._id.replace('yt_', '');
+                let ytId = song._id?.toString().startsWith('yt_') ? song._id.replace('yt_', '') : song.audioUrl?.replace('yt_', '');
+                if (!ytId && song.isYoutube) ytId = song.audioUrl;
+
                 ytPlayerRef.current.loadVideoById(ytId);
                 ytPlayerRef.current.playVideo();
                 ytPlayerRef.current.setVolume(volume);

@@ -3,6 +3,7 @@ import Song from '../models/Song.js';
 import { uploadToGoogleDrive, deleteFromGoogleDrive } from '../utils/uploadHelper.js';
 import { normalizeSongs, normalizeCoverUrl } from '../utils/coverUrlHelper.js';
 import jwt from 'jsonwebtoken';
+import ytSearch from 'yt-search';
 
 // @desc    Create a new playlist
 // @route   POST /api/playlists
@@ -48,6 +49,76 @@ export const createPlaylist = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Import a YouTube Playlist
+// @route   POST /api/playlists/import-youtube
+// @access  Private
+export const importYoutubePlaylist = async (req, res) => {
+    const { listId } = req.body;
+
+    if (!listId) {
+        return res.status(400).json({ message: 'Playlist ID is required' });
+    }
+
+    try {
+        const ytPlaylist = await ytSearch({ listId });
+
+        if (!ytPlaylist || !ytPlaylist.videos) {
+            return res.status(404).json({ message: 'Playlist not found on YouTube' });
+        }
+
+        const songIds = [];
+
+        // Loop through videos and create/find songs
+        for (const video of ytPlaylist.videos) {
+            const ytAudioUrl = `yt_${video.videoId}`;
+
+            let song = await Song.findOne({ audioUrl: ytAudioUrl });
+
+            if (!song) {
+                try {
+                    song = await Song.create({
+                        title: video.title || 'Unknown Title',
+                        artist: video.author.name || 'Unknown Artist',
+                        audioUrl: ytAudioUrl,
+                        coverUrl: video.thumbnail,
+                        duration: video.duration.seconds || 0,
+                        genre: 'Other',
+                        uploadedBy: req.user._id,
+                        isActive: true
+                    });
+                } catch (songErr) {
+                    console.error('Error saving YT song details:', songErr);
+                    continue; // Skip invalid songs
+                }
+            }
+            songIds.push(song._id);
+        }
+
+        const shareCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        const playlist = await Playlist.create({
+            name: ytPlaylist.title || 'YouTube Import',
+            description: 'Imported from YouTube',
+            isPublic: true,
+            userId: req.user._id,
+            coverUrl: ytPlaylist.image || ytPlaylist.thumbnail || (ytPlaylist.videos[0]?.thumbnail),
+            shareCode,
+            songs: songIds
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'YouTube Playlist imported successfully',
+            data: { playlist },
+        });
+
+    } catch (error) {
+        console.error('YT_IMPORT_ERR:', error);
+        res.status(500).json({ message: 'Error importing YouTube Playlist' });
+    }
+};
+
 
 // @desc    Get user's playlists
 // @route   GET /api/playlists/user/:userId

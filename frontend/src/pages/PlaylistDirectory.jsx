@@ -4,9 +4,16 @@ import { Search, Music, ChevronDown, Filter } from 'lucide-react';
 import playlistService from '../services/playlistService';
 import PlaylistHoverRow from '../components/music/PlaylistHoverRow';
 
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+
 const PlaylistDirectory = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isImporting, setIsImporting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLetter, setSelectedLetter] = useState('ALL');
     const containerRef = useRef(null);
@@ -35,6 +42,40 @@ const PlaylistDirectory = () => {
         const timer = setTimeout(fetchPlaylists, 500);
         return () => clearTimeout(timer);
     }, [searchTerm, selectedLetter]);
+    const handleSearchChange = async (e) => {
+        const val = e.target.value;
+        setSearchTerm(val);
+
+        // Check if the pasted string is a youtube playlist link
+        const ytRegex = /[?&]list=([^#\&\?]*)/;
+        const match = val.match(ytRegex);
+
+        if (match && match[1]) {
+            if (!user) {
+                toast.error("PLEASE LOGIN TO IMPORT PLAYLISTS");
+                setSearchTerm('');
+                return;
+            }
+
+            const listId = match[1];
+            setSearchTerm(''); // clear input
+            setIsImporting(true);
+            const loadingToast = toast.loading('IMPORTING YOUTUBE PLAYLIST...');
+
+            try {
+                const res = await playlistService.importYoutube(listId);
+                toast.success('PLAYLIST IMPORTED', { id: loadingToast });
+                if (res?.data?.playlist?._id) {
+                    navigate(`/playlist/${res.data.playlist._id}`);
+                }
+            } catch (error) {
+                console.error(error);
+                toast.error('FAILED TO IMPORT YOUTUBE PLAYLIST', { id: loadingToast });
+            } finally {
+                setIsImporting(false);
+            }
+        }
+    };
 
     return (
         <div
@@ -89,8 +130,9 @@ const PlaylistDirectory = () => {
                                 type="text"
                                 placeholder="SEARCH..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-transparent border-b border-border py-3 pl-8 text-[11px] tracking-widest uppercase focus:outline-none focus:border-foreground transition-all focus:min-w-[300px] text-foreground"
+                                onChange={handleSearchChange}
+                                disabled={isImporting}
+                                className="w-full bg-transparent border-b border-border py-3 pl-8 text-[11px] tracking-widest uppercase focus:outline-none focus:border-foreground transition-all focus:min-w-[300px] text-foreground disabled:opacity-50"
                             />
                             <Search
                                 size={14}

@@ -36,6 +36,11 @@ const playlistService = {
         const response = await api.delete(`/playlists/${id}`);
         return response.data;
     },
+
+    importYoutube: async (listId) => {
+        const response = await api.post('/playlists/import-youtube', { listId });
+        return response.data;
+    }
 };
 
 export default playlistService;
