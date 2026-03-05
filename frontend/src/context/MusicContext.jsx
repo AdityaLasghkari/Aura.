@@ -371,6 +371,7 @@ export const MusicProvider = ({ children }) => {
                 progress,
                 volume,
                 queue,
+                currentIndex,
                 isShuffle,
                 repeatMode,
                 playSong,

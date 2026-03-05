@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import Visualizer from '../components/music/Visualizer';
 import { useState } from 'react';
 import AddToPlaylistModal from '../components/music/AddToPlaylistModal';
-
+import QueuePanel from '../components/music/QueuePanel';
+import { ListMusic } from 'lucide-react';
 const VinylPlayerPage = () => {
     const {
         currentSong,
@@ -31,6 +32,7 @@ const VinylPlayerPage = () => {
 
     const navigate = useNavigate();
     const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+    const [isQueueOpen, setIsQueueOpen] = useState(false);
 
     if (!currentSong) {
         return (
@@ -325,6 +327,15 @@ const VinylPlayerPage = () => {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                setIsQueueOpen(true);
+                            }}
+                            className="text-gray-300 hover:text-foreground transition-colors pl-2"
+                        >
+                            <ListMusic size={20} strokeWidth={1.5} />
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 setIsPlaylistModalOpen(true);
                             }}
                             className="text-gray-300 hover:text-foreground transition-colors pl-2"
@@ -339,6 +350,11 @@ const VinylPlayerPage = () => {
                 isOpen={isPlaylistModalOpen}
                 onClose={() => setIsPlaylistModalOpen(false)}
                 songId={currentSong._id}
+            />
+
+            <QueuePanel
+                isOpen={isQueueOpen}
+                onClose={() => setIsQueueOpen(false)}
             />
         </motion.div>
     );

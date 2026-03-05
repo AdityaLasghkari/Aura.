@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, Maximize2, Repeat, Shuffle, Heart } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-
+import { useState } from 'react';
+import QueuePanel from '../music/QueuePanel';
+import { ListMusic } from 'lucide-react';
 
 const MusicPlayer = () => {
     const {
@@ -27,6 +29,7 @@ const MusicPlayer = () => {
 
     const location = useLocation();
     const navigate = useNavigate();
+    const [isQueueOpen, setIsQueueOpen] = useState(false);
 
     if (!currentSong) return null;
 
@@ -204,6 +207,16 @@ const MusicPlayer = () => {
                         </div>
                     </div>
 
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsQueueOpen(true);
+                        }}
+                        className="text-gray-300 hover:text-foreground transition-colors shrink-0 p-2"
+                    >
+                        <ListMusic size={16} />
+                    </button>
+
                     <Link
                         to="/player"
                         className="text-gray-300 hover:text-foreground transition-colors shrink-0 p-2"
@@ -214,6 +227,11 @@ const MusicPlayer = () => {
 
                 </div>
             </div>
+
+            <QueuePanel
+                isOpen={isQueueOpen}
+                onClose={() => setIsQueueOpen(false)}
+            />
         </motion.div>
     );
 };
