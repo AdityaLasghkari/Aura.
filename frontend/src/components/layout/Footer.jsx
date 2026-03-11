@@ -18,10 +18,7 @@ const Footer = () => {
                     <div className="flex flex-col space-y-6">
                         <h4 className="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-medium">CONNECT</h4>
                         <div className="flex flex-col space-y-3 text-[14px] font-light text-foreground">
-                            <a href="#" className="hover:text-foreground hover:underline transition-colors w-fit">INSTAGRAM</a>
-                            <a href="#" className="hover:text-foreground hover:underline transition-colors w-fit">LINKEDIN</a>
-                            <a href="#" className="hover:text-foreground hover:underline transition-colors w-fit">TWITTER / X</a>
-                            <a href="#" className="hover:text-foreground hover:underline transition-colors w-fit">SPOTIFY</a>
+                            <a href="https://www.instagram.com/_aditya_lashkari_" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline transition-colors w-fit">INSTAGRAM</a>
                         </div>
                     </div>
 
@@ -29,9 +26,9 @@ const Footer = () => {
                     <div className="flex flex-col space-y-6">
                         <h4 className="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-medium">CONTACT</h4>
                         <div className="flex flex-col space-y-3 text-[14px] font-light text-foreground">
-                            <a href="mailto:hello@aura-music.com" className="hover:underline transition-all w-fit">HELLO@AURA-MUSIC.COM</a>
-                            <p>+1 212 555 0192</p>
-                            <p className="mt-4 text-gray-500">SUPPORT HOURS:<br />9AM - 6PM EST</p>
+                            <a href="mailto:adityalashkari67@gmail.com" className="hover:underline transition-all w-fit">ADITYALASHKARI67@GMAIL.COM</a>
+                            <p>+91 81280 10918</p>
+                            <p className="mt-4 text-gray-500">SUPPORT HOURS:<br />9AM - 6PM IST</p>
                         </div>
                     </div>
 
@@ -40,12 +37,8 @@ const Footer = () => {
                         <h4 className="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-medium">OFFICES</h4>
                         <div className="grid grid-cols-2 gap-4 text-[13px] font-light text-foreground">
                             <div className="space-y-1">
-                                <p className="font-medium">NEW YORK</p>
-                                <p className="text-gray-500 text-[11px] leading-relaxed">249 CANAL ST.<br />NY 10013, USA</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="font-medium">COPENHAGEN</p>
-                                <p className="text-gray-500 text-[11px] leading-relaxed">SKTO. HANS TORV 2<br />2200 N, DK</p>
+                                <p className="font-medium">INDIA</p>
+                                <p className="text-gray-500 text-[11px] leading-relaxed">AHMEDABAD<br />GUJARAT</p>
                             </div>
                         </div>
                     </div>

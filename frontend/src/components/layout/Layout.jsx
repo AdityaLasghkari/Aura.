@@ -1,10 +1,13 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
 import MusicPlayer from './MusicPlayer';
 import Footer from './Footer';
 import { Toaster } from 'react-hot-toast';
 
 const Layout = () => {
+    const location = useLocation();
+    const isRubiksCubePage = location.pathname === '/rubiks-cube';
+
     return (
         <div className="min-h-screen flex flex-col pt-20">
             <Navigation />
@@ -13,7 +16,7 @@ const Layout = () => {
                 <Outlet />
             </main>
 
-            <Footer />
+            {!isRubiksCubePage && <Footer />}
             <MusicPlayer />
 
             <Toaster

@@ -14,6 +14,7 @@ import PlaylistDirectory from './pages/PlaylistDirectory';
 import CuratorProfile from './pages/CuratorProfile';
 import Profile from './pages/Profile';
 import LikedSongs from './pages/LikedSongs';
+import RubiksCubePage from './pages/RubiksCubePage';
 import { useAuth } from './context/AuthContext';
 import { useSync } from './context/SyncContext';
 
@@ -63,6 +64,7 @@ const App = () => {
           element={user?.role === 'admin' ? <UploadSong /> : <Navigate to="/" />}
         />
         <Route path="player" element={<VinylPlayerPage />} />
+        <Route path="rubiks-cube" element={<RubiksCubePage />} />
         <Route path="liked" element={user ? <LikedSongs /> : <Navigate to="/login" />} />
         <Route path="curator/:id" element={<CuratorProfile />} />
 

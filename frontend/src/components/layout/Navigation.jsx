@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, X, User, Heart, Radio, MessageCircle } from 'lucide-react';
+import { Search, Menu, X, User, Heart, Radio, MessageCircle, Box } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '../../context/AuthContext';
@@ -71,6 +71,14 @@ const Navigation = () => {
                     <div className="flex items-center space-x-4 md:space-x-8">
                         {/* Always Visible Actions: Search & Sync */}
                         <div className="flex items-center space-x-4 md:space-x-8 text-[11px] uppercase tracking-[0.2em] font-medium">
+                            <Link
+                                to="/rubiks-cube"
+                                className={`hover:text-foreground transition-colors flex items-center space-x-2 border border-white rounded px-2 py-1 ${isActive('/rubiks-cube') ? 'text-foreground bg-white/10' : 'text-gray-400'}`}
+                            >
+                                <Box className="w-5 h-5 md:w-3.5 md:h-3.5" />
+                                <span className="hidden md:inline">CUBE</span>
+                            </Link>
+
                             <button
                                 onClick={() => setSearchOpen(true)}
                                 className="hover:text-foreground text-gray-400 transition-colors flex items-center space-x-2"

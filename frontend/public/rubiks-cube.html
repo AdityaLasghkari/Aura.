@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA. — Rubik's Cube</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: #000000;
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      cursor: grab;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    /* ── HUD ─────────────────────────────── */
+    #hud {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    #hud .pill:nth-child(1) {
+      justify-self: start;
+    }
+
+    #hud .pill:nth-child(2) {
+      justify-self: center;
+    }
+
+    #hud .pill:nth-child(3) {
+      justify-self: end;
+    }
+
+    .pill {
+      background: rgba(17, 17, 17, 0.75);
+      border: 1px solid #222222;
+      border-radius: 24px;
+      padding: 7px 16px;
+      font-size: 11px;
+      color: #a0a0a0;
+      backdrop-filter: blur(12px);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .pill b {
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    /* ── Controls ────────────────────────── */
+    #controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      padding: 8px 8px 18px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.98) 0%, rgba(0, 0, 0, 0.65) 80%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* ── Face cards ── */
+    .face-grid {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .face-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid #222222;
+      border-radius: 8px;
+      padding: 8px 10px 6px;
+      min-width: 64px;
+    }
+
+    .face-header {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .face-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .face-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: #a0a0a0;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+    }
+
+    .face-btns {
+      display: flex;
+      gap: 3px;
+    }
+
+    .rot-btn {
+      width: 40px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid #222222;
+      background: #111111;
+      color: #ffffff;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+
+    .rot-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: #222222;
+      border-color: #444444;
+    }
+
+    .rot-btn:active:not(:disabled) {
+      transform: scale(0.92);
+    }
+
+    .rot-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    /* tooltip labels under arrows */
+    .rot-hints {
+      display: flex;
+      gap: 3px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .rot-hint {
+      font-size: 8px;
+      color: #666666;
+      width: 38px;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    /* face card accent colors */
+    .fc-U .face-dot {
+      background: #F0F0F0;
+      color: #F0F0F0;
+    }
+
+    .fc-U .rot-btn {
+      border-color: #222222;
+    }
+
+    .fc-D .face-dot {
+      background: #FFD500;
+      color: #FFD500;
+    }
+
+    .fc-D .rot-btn {
+      border-color: #222222;
+    }
+
+    .fc-R .face-dot {
+      background: #0051A8;
+      color: #4488ee;
+    }
+
+    .fc-R .rot-btn {
+      border-color: #222222;
+    }
+
+    .fc-L .face-dot {
+      background: #009B48;
+      color: #00bb66;
+    }
+
+    .fc-L .rot-btn {
+      border-color: #222222;
+    }
+
+    .fc-F .face-dot {
+      background: #C41230;
+      color: #ff5566;
+    }
+
+    .fc-F .rot-btn {
+      border-color: #222222;
+    }
+
+    .fc-B .face-dot {
+      background: #FF5900;
+      color: #ff8844;
+    }
+
+    .fc-B .rot-btn {
+      border-color: #222222;
+    }
+
+    /* ── Action buttons row ── */
+    .action-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-xl {
+      padding: 8px 20px;
+      border-radius: 24px;
+      border: 1px solid #222222;
+      background: #111111;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.2em;
+      transition: all 0.3s ease;
+    }
+
+    .btn-xl:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: #222222;
+      border-color: #ffffff;
+    }
+
+    .btn-xl:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-xl:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .bscram {
+      border-color: #222222;
+      color: #a0a0a0;
+    }
+
+    .bsolve {
+      border-color: #222222;
+      color: #a0a0a0;
+    }
+
+    .breset {
+      border-color: #222222;
+      color: #a0a0a0;
+    }
+
+    #legend {
+      font-size: 9px;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: #666666;
+      letter-spacing: 0.2em;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ── Solved overlay ──────────────────── */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    #overlay.show {
+      display: flex;
+      animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    #overlay-box {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid #222222;
+      border-radius: 12px;
+      padding: 40px 60px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    }
+
+    #ov-emoji {
+      font-size: 42px;
+      line-height: 1;
+    }
+
+    #ov-title {
+      font-size: 32px;
+      color: #ffffff;
+      margin: 16px 0 8px;
+      letter-spacing: 0.1em;
+      font-family: 'Playfair Display', serif;
+    }
+
+    #ov-sub {
+      font-size: 11px;
+      color: #a0a0a0;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* ── Mobile Responsive ────────────────── */
+    @media (max-width: 600px) {
+      #hud {
+        display: flex;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .help-pill {
+        display: none;
+      }
+
+      .pill {
+        padding: 5px 12px;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+      }
+
+      .pill b {
+        font-size: 10px;
+      }
+
+      #controls {
+        padding: 6px 6px 12px;
+        gap: 8px;
+      }
+
+      .face-card {
+        min-width: 50px;
+        padding: 6px 6px 4px;
+        gap: 4px;
+      }
+
+      .face-label {
+        font-size: 8px;
+      }
+
+      .rot-btn {
+        width: 32px;
+        height: 26px;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+
+      .rot-hint {
+        width: 32px;
+        font-size: 7px;
+      }
+
+      .btn-xl {
+        padding: 6px 14px;
+        font-size: 9px;
+        border-radius: 16px;
+      }
+
+      #legend {
+        font-size: 7px;
+        letter-spacing: 0.1em;
+      }
+
+      #overlay-box {
+        padding: 24px 32px;
+      }
+
+      #ov-emoji {
+        font-size: 32px;
+      }
+
+      #ov-title {
+        font-size: 24px;
+        margin: 12px 0 6px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="pill">Moves <b id="mc">0</b></div>
+    <div class="pill" id="st">Solved ✓</div>
+    <div class="pill help-pill">Drag to orbit · Scroll to zoom</div>
+  </div>
+
+  <!-- Solved banner -->
+  <div id="overlay">
+    <div id="overlay-box">
+      <div id="ov-emoji">🏆</div>
+      <div id="ov-title">SOLVED!</div>
+      <div id="ov-sub">Congratulations — well done!</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+
+    <!-- ── 6 face cards ── -->
+    <div class="face-grid">
+
+      <!-- TOP / WHITE -->
+      <div class="face-card fc-U">
+        <div class="face-header">
+          <div class="face-dot"></div>
+          <span class="face-label">Top</span>
+        </div>
+        <div class="face-btns">
+          <button class="rot-btn" title="Rotate Top clockwise" onclick="userMove('U')">↻</button>
+          <button class="rot-btn" title="Rotate Top counter-clock" onclick="userMove(&quot;U'&quot;)">↺</button>
+        </div>
+        <div class="rot-hints"><span class="rot-hint">CW</span><span class="rot-hint">CCW</span></div>
+      </div>
+
+      <!-- BOTTOM / YELLOW -->
+      <div class="face-card fc-D">
+        <div class="face-header">
+          <div class="face-dot"></div>
+          <span class="face-label">Bottom</span>
+        </div>
+        <div class="face-btns">
+          <button class="rot-btn" onclick="userMove('D')">↻</button>
+          <button class="rot-btn" onclick="userMove(&quot;D'&quot;)">↺</button>
+        </div>
+        <div class="rot-hints"><span class="rot-hint">CW</span><span class="rot-hint">CCW</span></div>
+      </div>
+
+      <!-- RIGHT / BLUE -->
+      <div class="face-card fc-R">
+        <div class="face-header">
+          <div class="face-dot"></div>
+          <span class="face-label">Right</span>
+        </div>
+        <div class="face-btns">
+          <button class="rot-btn" onclick="userMove('R')">↻</button>
+          <button class="rot-btn" onclick="userMove(&quot;R'&quot;)">↺</button>
+        </div>
+        <div class="rot-hints"><span class="rot-hint">CW</span><span class="rot-hint">CCW</span></div>
+      </div>
+
+      <!-- LEFT / GREEN -->
+      <div class="face-card fc-L">
+        <div class="face-header">
+          <div class="face-dot"></div>
+          <span class="face-label">Left</span>
+        </div>
+        <div class="face-btns">
+          <button class="rot-btn" onclick="userMove('L')">↻</button>
+          <button class="rot-btn" onclick="userMove(&quot;L'&quot;)">↺</button>
+        </div>
+        <div class="rot-hints"><span class="rot-hint">CW</span><span class="rot-hint">CCW</span></div>
+      </div>
+
+      <!-- FRONT / RED -->
+      <div class="face-card fc-F">
+        <div class="face-header">
+          <div class="face-dot"></div>
+          <span class="face-label">Front</span>
+        </div>
+        <div class="face-btns">
+          <button class="rot-btn" onclick="userMove('F')">↻</button>
+          <button class="rot-btn" onclick="userMove(&quot;F'&quot;)">↺</button>
+        </div>
+        <div class="rot-hints"><span class="rot-hint">CW</span><span class="rot-hint">CCW</span></div>
+      </div>
+
+      <!-- BACK / ORANGE -->
+      <div class="face-card fc-B">
+        <div class="face-header">
+          <div class="face-dot"></div>
+          <span class="face-label">Back</span>
+        </div>
+        <div class="face-btns">
+          <button class="rot-btn" onclick="userMove('B')">↻</button>
+          <button class="rot-btn" onclick="userMove(& quot;B'&quot;)">↺</button>
+        </div>
+        <div class="rot-hints"><span class="rot-hint">CW</span><span class="rot-hint">CCW</span></div>
+      </div>
+
+    </div><!-- /face-grid -->
+
+    <!-- ── Action row ── -->
+    <div class="action-row">
+      <button class="btn-xl bscram" onclick="doScramble()">⚡ Scramble</button>
+      <button class="btn-xl bsolve" id="solveBtn" onclick="doSolve()" disabled>✦ Auto-Solve</button>
+      <button class="btn-xl breset" onclick="doReset()">↺ Reset</button>
+    </div>
+
+    <div id="legend">↻ = clockwise when facing that side &nbsp;·&nbsp; ↺ = counter-clockwise</div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    // ══════════════════════════════════════════════════
+    //  THREE.JS SCENE
+    // ══════════════════════════════════════════════════
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.insertBefore(renderer.domElement, document.getElementById('hud'));
+
+    camera.position.set(5.2, 4.2, 5.8);
+    camera.lookAt(0, -1.0, 0);
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+    sun.position.set(8, 12, 7); scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x8899ff, 0.3);
+    fill.position.set(-6, -4, -7); scene.add(fill);
+
+    // ══════════════════════════════════════════════════
+    //  COLORS  (hex numbers)
+    // ══════════════════════════════════════════════════
+    //  BoxGeometry material face order: [+x, -x, +y, -y, +z, -z]
+    //                                   [ R,  L,  U,  D,  F,  B ]
+
+    const CLR = {
+      B: 0x0051A8,  // Blue   — R face (+x)
+      G: 0x009B48,  // Green  — L face (-x)
+      W: 0xF0F0F0,  // White  — U face (+y)
+      Y: 0xFFD500,  // Yellow — D face (-y)
+      R: 0xC41230,  // Red    — F face (+z)
+      O: 0xFF5900,  // Orange — B face (-z)
+      K: 0x0C0C0C,  // Black  — internal
+    };
+
+    function initColors(x, y, z) {
+      return [
+        x === 1 ? CLR.B : CLR.K,
+        x === -1 ? CLR.G : CLR.K,
+        y === 1 ? CLR.W : CLR.K,
+        y === -1 ? CLR.Y : CLR.K,
+        z === 1 ? CLR.R : CLR.K,
+        z === -1 ? CLR.O : CLR.K,
+      ];
+    }
+
+    // ══════════════════════════════════════════════════
+    //  CUBE CONSTRUCTION
+    // ══════════════════════════════════════════════════
+
+    const CS = 0.92;   // cubie size
+    const SP = 1.02;   // spacing
+
+    let cubies = [];
+
+    function buildCube() {
+      cubies.forEach(c => scene.remove(c.mesh));
+      cubies = [];
+
+      for (let x = -1; x <= 1; x++) {
+        for (let y = -1; y <= 1; y++) {
+          for (let z = -1; z <= 1; z++) {
+            const cols = initColors(x, y, z);
+            const mats = cols.map(hex => new THREE.MeshPhongMaterial({
+              color: hex,
+              shininess: hex === CLR.K ? 4 : 72,
+              specular: hex === CLR.K ? 0x000000 : 0x1a1a1a,
+            }));
+
+            const geo = new THREE.BoxGeometry(CS, CS, CS);
+            const mesh = new THREE.Mesh(geo, mats);
+            mesh.position.set(x * SP, y * SP, z * SP);
+
+            // thin black border
+            mesh.add(new THREE.LineSegments(
+              new THREE.EdgesGeometry(geo),
+              new THREE.LineBasicMaterial({ color: 0x000000 })
+            ));
+
+            scene.add(mesh);
+            cubies.push({ mesh, colors: cols, pos: [x, y, z] });
+          }
+        }
+      }
+    }
+
+    buildCube();
+
+    // ══════════════════════════════════════════════════
+    //  MOVE DEFINITIONS
+    // ══════════════════════════════════════════════════
+    //  ax  = rotation axis ('x'|'y'|'z')
+    //  ly  = which layer (-1|1)
+    //  ag  = final angle (radians, Three.js convention)
+    //  pr  = position rotation  [x,y,z] → [x',y',z']
+    //  cr  = color-slot rotation old[] → new[]
+    //
+    //  Color slot mapping after rotation:
+    //   new slot i = old slot that now points in direction i
+
+    const MOVES = {
+      'U': { ax: 'y', ly: 1, ag: -Math.PI / 2, pr: (x, y, z) => [z, y, -x], cr: c => [c[4], c[5], c[2], c[3], c[1], c[0]] },
+      "U'": { ax: 'y', ly: 1, ag: Math.PI / 2, pr: (x, y, z) => [-z, y, x], cr: c => [c[5], c[4], c[2], c[3], c[0], c[1]] },
+      'D': { ax: 'y', ly: -1, ag: Math.PI / 2, pr: (x, y, z) => [-z, y, x], cr: c => [c[5], c[4], c[2], c[3], c[0], c[1]] },
+      "D'": { ax: 'y', ly: -1, ag: -Math.PI / 2, pr: (x, y, z) => [z, y, -x], cr: c => [c[4], c[5], c[2], c[3], c[1], c[0]] },
+      'R': { ax: 'x', ly: 1, ag: Math.PI / 2, pr: (x, y, z) => [x, -z, y], cr: c => [c[0], c[1], c[5], c[4], c[2], c[3]] },
+      "R'": { ax: 'x', ly: 1, ag: -Math.PI / 2, pr: (x, y, z) => [x, z, -y], cr: c => [c[0], c[1], c[4], c[5], c[3], c[2]] },
+      'L': { ax: 'x', ly: -1, ag: -Math.PI / 2, pr: (x, y, z) => [x, z, -y], cr: c => [c[0], c[1], c[4], c[5], c[3], c[2]] },
+      "L'": { ax: 'x', ly: -1, ag: Math.PI / 2, pr: (x, y, z) => [x, -z, y], cr: c => [c[0], c[1], c[5], c[4], c[2], c[3]] },
+      'F': { ax: 'z', ly: 1, ag: -Math.PI / 2, pr: (x, y, z) => [y, -x, z], cr: c => [c[2], c[3], c[1], c[0], c[4], c[5]] },
+      "F'": { ax: 'z', ly: 1, ag: Math.PI / 2, pr: (x, y, z) => [-y, x, z], cr: c => [c[3], c[2], c[0], c[1], c[4], c[5]] },
+      'B': { ax: 'z', ly: -1, ag: Math.PI / 2, pr: (x, y, z) => [-y, x, z], cr: c => [c[3], c[2], c[0], c[1], c[4], c[5]] },
+      "B'": { ax: 'z', ly: -1, ag: -Math.PI / 2, pr: (x, y, z) => [y, -x, z], cr: c => [c[2], c[3], c[1], c[0], c[4], c[5]] },
+    };
+
+    const INV = {
+      'U': "U'", "U'": 'U', 'D': "D'", "D'": 'D',
+      'R': "R'", "R'": 'R', 'L': "L'", "L'": 'L',
+      'F': "F'", "F'": 'F', 'B': "B'", "B'": 'B',
+    };
+
+    // ══════════════════════════════════════════════════
+    //  ANIMATION ENGINE
+    // ══════════════════════════════════════════════════
+
+    let queue = [];
+    let busy = false;
+    let onDone = null;
+
+    const MOVE_MS = 175; // animation duration per move
+
+    function enqueue(moves, cb) {
+      moves.forEach(m => queue.push(m));
+      if (cb) onDone = cb;
+      if (!busy) next();
+    }
+
+    function next() {
+      if (!queue.length) {
+        busy = false;
+        if (onDone) { const f = onDone; onDone = null; f(); }
+        return;
+      }
+      busy = true;
+      animateMove(queue.shift());
+    }
+
+    function animateMove(name) {
+      const def = MOVES[name];
+      const ai = { x: 0, y: 1, z: 2 }[def.ax];
+      const layer = cubies.filter(c => Math.round(c.pos[ai]) === def.ly);
+
+      const pivot = new THREE.Group();
+      scene.add(pivot);
+      layer.forEach(c => pivot.attach(c.mesh));
+
+      const t0 = performance.now();
+
+      (function frame(now) {
+        const t = Math.min((now - t0) / MOVE_MS, 1);
+        const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease-in-out quad
+        pivot.rotation[def.ax] = def.ag * e;
+
+        if (t < 1) { requestAnimationFrame(frame); return; }
+
+        // ── Finalise ──────────────────────────
+        layer.forEach(c => {
+          scene.attach(c.mesh);  // preserves world transform, sets parent to scene
+
+          // snap to exact grid position
+          const np = def.pr(...c.pos).map(v => Math.round(v));
+          c.pos = np;
+          c.colors = def.cr(c.colors);
+
+          c.mesh.position.set(np[0] * SP, np[1] * SP, np[2] * SP);
+          c.mesh.rotation.set(0, 0, 0);
+          c.colors.forEach((hex, i) => c.mesh.material[i].color.setHex(hex));
+        });
+
+        scene.remove(pivot);
+        setTimeout(next, 10);
+      })(t0);
+    }
+
+    // ══════════════════════════════════════════════════
+    //  GAME LOGIC
+    // ══════════════════════════════════════════════════
+
+    let moveCount = 0;
+    let scramHist = [];
+
+    function userMove(name) {
+      scramHist = [];
+      document.getElementById('solveBtn').disabled = true;
+      document.getElementById('overlay').classList.remove('show');
+      document.getElementById('st').textContent = 'Playing…';
+      moveCount++;
+      document.getElementById('mc').textContent = moveCount;
+      enqueue([name], checkSolved);
+    }
+
+    function doScramble() {
+      if (busy) return;
+      doReset(false);
+
+      const faces = ['U', 'D', 'R', 'L', 'F', 'B'];
+      const moves = [];
+      let lastFace = '';
+
+      for (let i = 0; i < 20; i++) {
+        let f;
+        do { f = faces[Math.floor(Math.random() * 6)]; } while (f === lastFace);
+        lastFace = f;
+        moves.push(f + (Math.random() < 0.5 ? "'" : ''));
+      }
+
+      scramHist = [...moves];
+      document.getElementById('st').textContent = '🎲 Scrambled';
+      document.getElementById('overlay').classList.remove('show');
+
+      enqueue(moves, () => {
+        document.getElementById('solveBtn').disabled = false;
+      });
+    }
+
+    function doSolve() {
+      if (busy || !scramHist.length) return;
+      document.getElementById('solveBtn').disabled = true;
+      document.getElementById('st').textContent = 'Solving…';
+      const sol = [...scramHist].reverse().map(m => INV[m]);
+      scramHist = [];
+      enqueue(sol, checkSolved);
+    }
+
+    function doReset(full = true) {
+      queue = [];
+      busy = false;
+      onDone = null;
+      scramHist = [];
+      if (full) {
+        moveCount = 0;
+        document.getElementById('mc').textContent = 0;
+        document.getElementById('st').textContent = 'Solved ✓';
+        document.getElementById('solveBtn').disabled = true;
+        document.getElementById('overlay').classList.remove('show');
+      }
+      buildCube();
+    }
+
+    // ── Solved detection ────────────────────────────────
+    function checkSolved() {
+      const specs = [
+        { ai: 0, ly: 1, ci: 0 },  // R  (+x)
+        { ai: 0, ly: -1, ci: 1 },  // L  (-x)
+        { ai: 1, ly: 1, ci: 2 },  // U  (+y)
+        { ai: 1, ly: -1, ci: 3 },  // D  (-y)
+        { ai: 2, ly: 1, ci: 4 },  // F  (+z)
+        { ai: 2, ly: -1, ci: 5 },  // B  (-z)
+      ];
+
+      const solved = specs.every(({ ai, ly, ci }) => {
+        const face = cubies.filter(c => c.pos[ai] === ly);
+        const ref = face[0].colors[ci];
+        return ref !== CLR.K && face.every(c => c.colors[ci] === ref);
+      });
+
+      if (solved) {
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('st').textContent = '✓ Solved!';
+        document.getElementById('solveBtn').disabled = true;
+        scramHist = [];
+      }
+    }
+
+    // ══════════════════════════════════════════════════
+    //  CAMERA ORBIT (mouse + touch + scroll)
+    // ══════════════════════════════════════════════════
+
+    let drag = false, px = 0, py = 0;
+    const isDesktop = window.innerWidth > 600;
+    const sph = { theta: 0.78, phi: 0.9, r: isDesktop ? 9.0 : 13.5 };
+
+    function camUpdate() {
+      const { theta: t, phi: p, r } = sph;
+      camera.position.set(r * Math.sin(p) * Math.sin(t), r * Math.cos(p), r * Math.sin(p) * Math.cos(t));
+      camera.lookAt(0, -1.0, 0);
+    }
+    camUpdate();
+
+    const cvs = renderer.domElement;
+    const SENS = 0.0065;
+
+    function onDown(x, y) { drag = true; px = x; py = y; }
+    function onMove(x, y) {
+      if (!drag) return;
+      sph.theta -= (x - px) * SENS;
+      sph.phi = Math.max(0.12, Math.min(Math.PI - 0.12, sph.phi + (y - py) * SENS));
+      px = x; py = y;
+      camUpdate();
+    }
+    function onUp() { drag = false; }
+
+    cvs.addEventListener('mousedown', e => onDown(e.clientX, e.clientY));
+    cvs.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+    cvs.addEventListener('mouseup', onUp);
+    cvs.addEventListener('mouseleave', onUp);
+
+    cvs.addEventListener('touchstart', e => { e.preventDefault(); onDown(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+    cvs.addEventListener('touchmove', e => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+    cvs.addEventListener('touchend', onUp);
+
+    cvs.addEventListener('wheel', e => {
+      sph.r = Math.max(5, Math.min(18, sph.r + e.deltaY * 0.014));
+      camUpdate();
+    }, { passive: true });
+
+    // ══════════════════════════════════════════════════
+    //  RESIZE & RENDER LOOP
+    // ══════════════════════════════════════════════════
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    (function loop() {
+      requestAnimationFrame(loop);
+      renderer.render(scene, camera);
+    })();
+  </script>
+</body>
+
+</html>
